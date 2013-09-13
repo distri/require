@@ -1,29 +1,7 @@
 (function (ENV) {
 (function() {
-  var Module, cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,
+  var cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,
     __slice = [].slice;
-
-  Module = function(id, parent) {
-    var self;
-    self = {
-      children: [],
-      id: id,
-      exports: {},
-      filename: null,
-      loaded: false,
-      parent: parent
-    };
-    if (parent != null) {
-      parent.children.push(self);
-    }
-    return self;
-  };
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Module;
-  } else {
-    this.Module = Module;
-  }
 
   cache = {};
 
@@ -37,7 +15,7 @@
     if (isPackage(path)) {
       return {};
     }
-    localPath = parent.filename.split(fileSeparator).slice(0, -1);
+    localPath = (parent != null ? parent.path.split(fileSeparator) : void 0) || [];
     normalizedPath = normalizePath(path, localPath);
     module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parent));
     return module.exports;
@@ -73,7 +51,9 @@
     if (typeof content === "undefined" || content === null) {
       throw "Could not find file: " + path;
     }
-    module = Module(path, parent);
+    module = {
+      exports: {}
+    };
     context = {
       ENV: ENV,
       require: function(path) {
@@ -97,6 +77,24 @@
     return !(path.startsWith('/') || path.startsWith('./') || path.startsWith('../'));
   };
 
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = function(path) {
+      return require(path);
+    };
+  } else {
+    this.require = function(path) {
+      return require(path);
+    };
+  }
+
+}).call(this);
+;(function() {
+
+
+}).call(this);
+;(function() {
+
+
 }).call(this);
 }({
   "source": {
@@ -115,19 +113,37 @@
     "source/require.coffee.md": {
       "path": "source/require.coffee.md",
       "mode": "100644",
-      "content": "Require\n=======\n\nA Node.js compatible require implementation for pure client side apps.\n\nEach file is a module. Modules are responsible for exporting an object. Unlike\ntraditional client side JavaScript, Ruby, or other common languages the module\nis not responsible for naming its product in the context of the requirer. This\nmaintains encapsulation because it is impossible from within a module to know\nwhat external name would be correct to prevent errors of composition in all\npossible uses.\n\nImplementation\n--------------\n\nA simple translation of the Node.js module creator, keeping the same interface.\n\n    Module = (id, parent) ->\n      self =\n        children: []\n        id: id\n        exports: {}\n        filename: null\n        loaded: false\n        parent: parent\n        \n      parent?.children.push(self)\n        \n      return self\n\nTransitional style of exports, if `module` exists because we are using a module\nsystem then export in that manner, otherwise we are not using a module system\nand must export our own global reference.\n\n    if module?\n      module.exports = Module\n    else\n      @Module = Module\n\nKeep a cache of loaded modules so that multiple calls to the same name return\nthe same module.\n\n    cache = {}\n    \nFile separator is '/'\n\n    fileSeparator = '/'\n\nBecause we're in the browser window is global.\n\n    global = window\n    \nRequire a module based on a path. Each file is its own separate module.\n\n    require = (path) ->\n      parent = this\n      \n      if isPackage(path)\n        # TODO\n        return {}\n      \n      localPath = parent.filename.split(fileSeparator)[0...-1]\n      normalizedPath = normalizePath(path, localPath)\n      \n      module = \n        cache[normalizedPath] ||= loadModule(normalizedPath, parent)\n\n      return module.exports\n\nTo normalize the path we convert local paths to a standard form that does not\ncontain an references to current or parent directories.\n\n    normalizePath = (path, base=[]) ->\n      [first, rest...] = pieces = path.split(fileSeparator)\n\nUse the first part of the path to determine if we are looking up an absolute\npath.\n\n      if first is \"\"\n        base = []\n\nChew up all the pieces into a standardized path.\n\n        while pieces.length\n          switch piece = pieces.shift()\n            when \"..\"\n              base.pop()\n            when \"\", \".\"\n              # Skip\n            else\n              base.push(piece)\n              \n        return base.join(fileSeparator)\n\nLoad a file from within our package.\n\n    loadModule = (path) ->\n      program = ENV.distribution[path]\n\n      throw \"Could not find file: #{path}\" unless content?\n      \n      module = Module(path, parent)\n      \n      context =\n        ENV: ENV\n        require: (path) -> \n          require.call(module, path)\n        global: global\n        module: module\n        exports: module.exports\n        __filename: path\n        __dirname: path.split(fileSeparator)[0...-1]\n      \n      args = Object.keys(context)\n      values = args.map (name) -> context[name]\n\n      Function(args..., program).apply(module, values)\n\n      return module\n\nTODO: Package loading\n\n    isPackage = (path) ->\n      !(path.startsWith('/') or\n        path.startsWith('./') or\n        path.startsWith('../')\n      )\n\nNode needs to check file extensions, but because we have a compile step we are\nable to compile all files extensionlessly based only on their path. So while\nNode may need to check for either `path/somefile.js` or `path/somefile.coffee` \nthat will already have been resolved for us and we will only check \n`path/somefile`\n\n",
+      "content": "Require\n=======\n\nA Node.js compatible require implementation for pure client side apps.\n\nEach file is a module. Modules are responsible for exporting an object. Unlike\ntraditional client side JavaScript, Ruby, or other common languages the module\nis not responsible for naming its product in the context of the requirer. This\nmaintains encapsulation because it is impossible from within a module to know\nwhat external name would be correct to prevent errors of composition in all\npossible uses.\n\nImplementation\n--------------\n\nKeep a cache of loaded modules so that multiple calls to the same name return\nthe same module.\n\n    cache = {}\n    \nFile separator is '/'\n\n    fileSeparator = '/'\n\nBecause we're in the browser window is global.\n\n    global = window\n    \nRequire a module based on a path. Each file is its own separate module.\n\n    require = (path) ->\n      parent = this\n\n      if isPackage(path)\n        # TODO\n        return {}\n\n      localPath = parent?.path.split(fileSeparator) or []\n\n      normalizedPath = normalizePath(path, localPath)\n      \n      module = \n        cache[normalizedPath] ||= loadModule(normalizedPath, parent)\n\n      return module.exports\n\nTo normalize the path we convert local paths to a standard form that does not\ncontain an references to current or parent directories.\n\n    normalizePath = (path, base=[]) ->\n      [first, rest...] = pieces = path.split(fileSeparator)\n\nUse the first part of the path to determine if we are looking up an absolute\npath.\n\n      if first is \"\"\n        base = []\n\nChew up all the pieces into a standardized path.\n\n        while pieces.length\n          switch piece = pieces.shift()\n            when \"..\"\n              base.pop()\n            when \"\", \".\"\n              # Skip\n            else\n              base.push(piece)\n              \n        return base.join(fileSeparator)\n\nLoad a file from within our package.\n\n    loadModule = (path) ->\n      program = ENV.distribution[path]\n\n      throw \"Could not find file: #{path}\" unless content?\n\n      module =\n        exports: {}\n\n      context =\n        ENV: ENV\n        require: (path) -> \n          require.call(module, path)\n        global: global\n        module: module\n        exports: module.exports\n        __filename: path\n        __dirname: path.split(fileSeparator)[0...-1]\n      \n      args = Object.keys(context)\n      values = args.map (name) -> context[name]\n\n      Function(args..., program).apply(module, values)\n\n      return module\n\nTODO: Package loading\n\n    isPackage = (path) ->\n      !(path.startsWith('/') or\n        path.startsWith('./') or\n        path.startsWith('../')\n      )\n\nNode needs to check file extensions, but because we have a compile step we are\nable to compile all files extensionlessly based only on their path. So while\nNode may need to check for either `path/somefile.js` or `path/somefile.coffee` \nthat will already have been resolved for us and we will only check \n`path/somefile`\n\nTransitional style of exports, if `module` exists because we are using a module\nsystem then export in that manner, otherwise we are not using a module system\nand must export our own global reference.\n\n    if module?\n      module.exports = (path) ->\n        require(path)\n    else\n      @require = (path) ->\n        require(path)\n",
+      "type": "blob"
+    },
+    "parent.coffee.md": {
+      "path": "parent.coffee.md",
+      "mode": "100644",
+      "content": "A test file that can require another file.\n\n    # child = require('./child')\n    \n",
+      "type": "blob"
+    },
+    "child.coffee.md": {
+      "path": "child.coffee.md",
+      "mode": "100644",
+      "content": "A file that exports a value.\n\n    # module.exports = \"CHILD\"\n",
+      "type": "blob"
+    },
+    "test/require.coffee.md": {
+      "path": "test/require.coffee.md",
+      "mode": "100644",
+      "content": "Testing out this crazy require thing\n\n    describe \"require\", ->\n      it \"should exist globally until we bootstrap it\", ->\n        assert window.require\n",
       "type": "blob"
     }
   },
   "distribution": {
     "build.js": {
       "path": "build.js",
-      "content": "(function() {\n  var Module, cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,\n    __slice = [].slice;\n\n  Module = function(id, parent) {\n    var self;\n    self = {\n      children: [],\n      id: id,\n      exports: {},\n      filename: null,\n      loaded: false,\n      parent: parent\n    };\n    if (parent != null) {\n      parent.children.push(self);\n    }\n    return self;\n  };\n\n  if (typeof module !== \"undefined\" && module !== null) {\n    module.exports = Module;\n  } else {\n    this.Module = Module;\n  }\n\n  cache = {};\n\n  fileSeparator = '/';\n\n  global = window;\n\n  require = function(path) {\n    var localPath, module, normalizedPath, parent;\n    parent = this;\n    if (isPackage(path)) {\n      return {};\n    }\n    localPath = parent.filename.split(fileSeparator).slice(0, -1);\n    normalizedPath = normalizePath(path, localPath);\n    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parent));\n    return module.exports;\n  };\n\n  normalizePath = function(path, base) {\n    var first, piece, pieces, rest, _ref;\n    if (base == null) {\n      base = [];\n    }\n    _ref = pieces = path.split(fileSeparator), first = _ref[0], rest = 2 <= _ref.length ? __slice.call(_ref, 1) : [];\n    if (first === \"\") {\n      base = [];\n      while (pieces.length) {\n        switch (piece = pieces.shift()) {\n          case \"..\":\n            base.pop();\n            break;\n          case \"\":\n          case \".\":\n            break;\n          default:\n            base.push(piece);\n        }\n      }\n      return base.join(fileSeparator);\n    }\n  };\n\n  loadModule = function(path) {\n    var args, context, module, program, values;\n    program = ENV.distribution[path];\n    if (typeof content === \"undefined\" || content === null) {\n      throw \"Could not find file: \" + path;\n    }\n    module = Module(path, parent);\n    context = {\n      ENV: ENV,\n      require: function(path) {\n        return require.call(module, path);\n      },\n      global: global,\n      module: module,\n      exports: module.exports,\n      __filename: path,\n      __dirname: path.split(fileSeparator).slice(0, -1)\n    };\n    args = Object.keys(context);\n    values = args.map(function(name) {\n      return context[name];\n    });\n    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);\n    return module;\n  };\n\n  isPackage = function(path) {\n    return !(path.startsWith('/') || path.startsWith('./') || path.startsWith('../'));\n  };\n\n}).call(this);",
+      "content": "(function() {\n  var cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,\n    __slice = [].slice;\n\n  cache = {};\n\n  fileSeparator = '/';\n\n  global = window;\n\n  require = function(path) {\n    var localPath, module, normalizedPath, parent;\n    parent = this;\n    if (isPackage(path)) {\n      return {};\n    }\n    localPath = (parent != null ? parent.path.split(fileSeparator) : void 0) || [];\n    normalizedPath = normalizePath(path, localPath);\n    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parent));\n    return module.exports;\n  };\n\n  normalizePath = function(path, base) {\n    var first, piece, pieces, rest, _ref;\n    if (base == null) {\n      base = [];\n    }\n    _ref = pieces = path.split(fileSeparator), first = _ref[0], rest = 2 <= _ref.length ? __slice.call(_ref, 1) : [];\n    if (first === \"\") {\n      base = [];\n      while (pieces.length) {\n        switch (piece = pieces.shift()) {\n          case \"..\":\n            base.pop();\n            break;\n          case \"\":\n          case \".\":\n            break;\n          default:\n            base.push(piece);\n        }\n      }\n      return base.join(fileSeparator);\n    }\n  };\n\n  loadModule = function(path) {\n    var args, context, module, program, values;\n    program = ENV.distribution[path];\n    if (typeof content === \"undefined\" || content === null) {\n      throw \"Could not find file: \" + path;\n    }\n    module = {\n      exports: {}\n    };\n    context = {\n      ENV: ENV,\n      require: function(path) {\n        return require.call(module, path);\n      },\n      global: global,\n      module: module,\n      exports: module.exports,\n      __filename: path,\n      __dirname: path.split(fileSeparator).slice(0, -1)\n    };\n    args = Object.keys(context);\n    values = args.map(function(name) {\n      return context[name];\n    });\n    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);\n    return module;\n  };\n\n  isPackage = function(path) {\n    return !(path.startsWith('/') || path.startsWith('./') || path.startsWith('../'));\n  };\n\n  if (typeof module !== \"undefined\" && module !== null) {\n    module.exports = function(path) {\n      return require(path);\n    };\n  } else {\n    this.require = function(path) {\n      return require(path);\n    };\n  }\n\n}).call(this);\n;(function() {\n\n\n}).call(this);\n;(function() {\n\n\n}).call(this);",
       "type": "blob"
     },
     "test.js": {
       "path": "test.js",
-      "content": "(function() {\n  var Module, cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,\n    __slice = [].slice;\n\n  Module = function(id, parent) {\n    var self;\n    self = {\n      children: [],\n      id: id,\n      exports: {},\n      filename: null,\n      loaded: false,\n      parent: parent\n    };\n    if (parent != null) {\n      parent.children.push(self);\n    }\n    return self;\n  };\n\n  if (typeof module !== \"undefined\" && module !== null) {\n    module.exports = Module;\n  } else {\n    this.Module = Module;\n  }\n\n  cache = {};\n\n  fileSeparator = '/';\n\n  global = window;\n\n  require = function(path) {\n    var localPath, module, normalizedPath, parent;\n    parent = this;\n    if (isPackage(path)) {\n      return {};\n    }\n    localPath = parent.filename.split(fileSeparator).slice(0, -1);\n    normalizedPath = normalizePath(path, localPath);\n    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parent));\n    return module.exports;\n  };\n\n  normalizePath = function(path, base) {\n    var first, piece, pieces, rest, _ref;\n    if (base == null) {\n      base = [];\n    }\n    _ref = pieces = path.split(fileSeparator), first = _ref[0], rest = 2 <= _ref.length ? __slice.call(_ref, 1) : [];\n    if (first === \"\") {\n      base = [];\n      while (pieces.length) {\n        switch (piece = pieces.shift()) {\n          case \"..\":\n            base.pop();\n            break;\n          case \"\":\n          case \".\":\n            break;\n          default:\n            base.push(piece);\n        }\n      }\n      return base.join(fileSeparator);\n    }\n  };\n\n  loadModule = function(path) {\n    var args, context, module, program, values;\n    program = ENV.distribution[path];\n    if (typeof content === \"undefined\" || content === null) {\n      throw \"Could not find file: \" + path;\n    }\n    module = Module(path, parent);\n    context = {\n      ENV: ENV,\n      require: function(path) {\n        return require.call(module, path);\n      },\n      global: global,\n      module: module,\n      exports: module.exports,\n      __filename: path,\n      __dirname: path.split(fileSeparator).slice(0, -1)\n    };\n    args = Object.keys(context);\n    values = args.map(function(name) {\n      return context[name];\n    });\n    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);\n    return module;\n  };\n\n  isPackage = function(path) {\n    return !(path.startsWith('/') || path.startsWith('./') || path.startsWith('../'));\n  };\n\n}).call(this);",
+      "content": "(function() {\n  var cache, fileSeparator, global, isPackage, loadModule, normalizePath, require,\n    __slice = [].slice;\n\n  cache = {};\n\n  fileSeparator = '/';\n\n  global = window;\n\n  require = function(path) {\n    var localPath, module, normalizedPath, parent;\n    parent = this;\n    if (isPackage(path)) {\n      return {};\n    }\n    localPath = (parent != null ? parent.path.split(fileSeparator) : void 0) || [];\n    normalizedPath = normalizePath(path, localPath);\n    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parent));\n    return module.exports;\n  };\n\n  normalizePath = function(path, base) {\n    var first, piece, pieces, rest, _ref;\n    if (base == null) {\n      base = [];\n    }\n    _ref = pieces = path.split(fileSeparator), first = _ref[0], rest = 2 <= _ref.length ? __slice.call(_ref, 1) : [];\n    if (first === \"\") {\n      base = [];\n      while (pieces.length) {\n        switch (piece = pieces.shift()) {\n          case \"..\":\n            base.pop();\n            break;\n          case \"\":\n          case \".\":\n            break;\n          default:\n            base.push(piece);\n        }\n      }\n      return base.join(fileSeparator);\n    }\n  };\n\n  loadModule = function(path) {\n    var args, context, module, program, values;\n    program = ENV.distribution[path];\n    if (typeof content === \"undefined\" || content === null) {\n      throw \"Could not find file: \" + path;\n    }\n    module = {\n      exports: {}\n    };\n    context = {\n      ENV: ENV,\n      require: function(path) {\n        return require.call(module, path);\n      },\n      global: global,\n      module: module,\n      exports: module.exports,\n      __filename: path,\n      __dirname: path.split(fileSeparator).slice(0, -1)\n    };\n    args = Object.keys(context);\n    values = args.map(function(name) {\n      return context[name];\n    });\n    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);\n    return module;\n  };\n\n  isPackage = function(path) {\n    return !(path.startsWith('/') || path.startsWith('./') || path.startsWith('../'));\n  };\n\n  if (typeof module !== \"undefined\" && module !== null) {\n    module.exports = function(path) {\n      return require(path);\n    };\n  } else {\n    this.require = function(path) {\n      return require(path);\n    };\n  }\n\n}).call(this);\n;(function() {\n\n\n}).call(this);\n;(function() {\n\n\n}).call(this);\n;;(function() {\n  describe(\"require\", function() {\n    return it(\"should exist globally until we bootstrap it\", function() {\n      return assert(window.require);\n    });\n  });\n\n}).call(this);",
       "type": "blob"
     }
   },
