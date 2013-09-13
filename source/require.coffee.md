@@ -29,7 +29,7 @@ Because we're in the browser window is global.
 A top-level module so that all other modules won't have to be orphans.
 
     rootModule =
-      path: "/"
+      path: ""
 
 Require a module based on a path. Each file is its own separate module.
 
@@ -42,7 +42,7 @@ Require a module based on a path. Each file is its own separate module.
         # TODO
         return {}
 
-      localPath = parent?.path.split(fileSeparator) or []
+      localPath = parent.path.split(fileSeparator)
 
       normalizedPath = normalizePath(path, localPath)
       
