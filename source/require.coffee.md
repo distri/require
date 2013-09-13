@@ -34,7 +34,6 @@ A top-level module so that all other modules won't have to be orphans.
 Require a module based on a path. Each file is its own separate module.
 
     require = (path) ->
-      console.log "requiring #{path}"
       parent = this
       
       console.log parent
@@ -58,29 +57,24 @@ contain an references to current or parent directories.
     normalizePath = (path, base=[]) ->
       [first, rest...] = pieces = path.split(fileSeparator)
 
-Use the first part of the path to determine if we are looking up an absolute
-path.
-
-      if first is ""
-        base = []
-
 Chew up all the pieces into a standardized path.
 
-        while pieces.length
-          switch piece = pieces.shift()
-            when ".."
-              base.pop()
-            when "", "."
-              # Skip
-            else
-              base.push(piece)
-              
-        return base.join(fileSeparator)
+      while pieces.length
+        switch piece = pieces.shift()
+          when ".."
+            base.pop()
+          when "", "."
+            # Skip
+          else
+            base.push(piece)
+            
+      return base.join(fileSeparator)
 
 Load a file from within our package.
 
     loadModule = (path) ->
-      program = ENV.distribution[path]
+      console.log "Loading module at #{path}"
+      program = ENV.distribution[path].content
 
       throw "Could not find file: #{path}" unless program?
 
