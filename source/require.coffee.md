@@ -55,20 +55,21 @@ To normalize the path we convert local paths to a standard form that does not
 contain an references to current or parent directories.
 
     normalizePath = (path, base=[]) ->
-      [first, rest...] = pieces = path.split(fileSeparator)
+      base = base.concat path.split(fileSeparator)
+      result = []
 
 Chew up all the pieces into a standardized path.
 
-      while pieces.length
-        switch piece = pieces.shift()
+      while base.length
+        switch piece = base.shift()
           when ".."
-            base.pop()
+            result.pop()
           when "", "."
             # Skip
           else
-            base.push(piece)
+            result.push(piece)
             
-      return base.join(fileSeparator)
+      return result.join(fileSeparator)
 
 Load a file from within our package.
 
