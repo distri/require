@@ -1,0 +1,111 @@
+Require
+=======
+
+A Node.js compatible require implementation for pure client side apps.
+
+Each file is a module. Modules are responsible for exporting an object. Unlike
+traditional client side JavaScript, Ruby, or other common languages the module
+is not responsible for naming its product in the context of the requirer. This
+maintains encapsulation because it is impossible from within a module to know
+what external name would be correct to prevent errors of composition in all
+possible uses.
+
+Implementation
+--------------
+
+A simple translation of the Node.js module creator, keeping the same interface.
+
+    Module = (id, parent) ->
+      self =
+        children: []
+        id: id
+        exports: {}
+        filename: null
+        loaded: false
+        parent: parent
+        
+      parent?.children.push(self)
+        
+      return self
+
+Transitional style of exports, if `module` exists because we are using a module
+system then export in that manner, otherwise we are not using a module system
+and must export our own global reference.
+
+    if module?
+      module.exports = Module
+    else
+      @Module = Module
+
+Keep a cache of loaded modules so that multiple calls to the same name return
+the same module.
+
+    cache = {}
+    
+File separator is '/'
+
+    fileSeparator = '/'
+    
+Require a module based on a path. Each file is its own separate module.
+
+    require = (path) ->
+      parent = this
+      
+      if isPackage(path)
+        # TODO
+        return {}
+      
+      localPath = parent.filename.split(fileSeparator)[0...-1]
+      normalizedPath = normalizePath(path, localPath)
+      
+      loadFileContent(normalizedPath)
+      
+To normalize the path we convert local paths to a standard form that does not
+contain an references to current or parent directories.
+
+    normalizePath = (path, base=[]) ->
+      [first, rest...] = pieces = path.split(fileSeparator)
+
+Use the first part of the path to determine if we are looking up an absolute
+path.
+
+      if first is ""
+        base = []
+
+Chew up all the pieces into a standardized path.
+
+        while pieces.length
+          switch piece = pieces.shift()
+            when ".."
+              base.pop()
+            when "", "."
+              # Skip
+            else
+              base.push(piece)
+              
+        return base.join(fileSeparator)
+
+Load a file from within our package.
+
+    loadFileContent = (path) ->
+      content = ENV.distribution[path]
+      
+      if content?
+        return content
+      else
+        throw "Could not find file: #{path}"
+
+TODO: Package loading
+
+    isPackage = (path) ->
+      !(path.startsWith('/') or
+        path.startsWith('./') or
+        path.startsWith('../')
+      )
+
+Node needs to check file extensions, but because we have a compile step we are
+able to compile all files extensionlessly based only on their path. So while
+Node may need to check for either `path/somefile.js` or `path/somefile.coffee` 
+that will already have been resolved for us and we will only check 
+`path/somefile`
+
