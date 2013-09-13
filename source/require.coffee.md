@@ -45,6 +45,10 @@ the same module.
 File separator is '/'
 
     fileSeparator = '/'
+
+Because we're in the browser window is global.
+
+    global = window
     
 Require a module based on a path. Each file is its own separate module.
 
@@ -58,8 +62,11 @@ Require a module based on a path. Each file is its own separate module.
       localPath = parent.filename.split(fileSeparator)[0...-1]
       normalizedPath = normalizePath(path, localPath)
       
-      loadFileContent(normalizedPath)
-      
+      module = 
+        cache[normalizedPath] ||= loadModule(normalizedPath, parent)
+
+      return module.exports
+
 To normalize the path we convert local paths to a standard form that does not
 contain an references to current or parent directories.
 
@@ -87,13 +94,29 @@ Chew up all the pieces into a standardized path.
 
 Load a file from within our package.
 
-    loadFileContent = (path) ->
-      content = ENV.distribution[path]
+    loadModule = (path) ->
+      program = ENV.distribution[path]
+
+      throw "Could not find file: #{path}" unless content?
       
-      if content?
-        return content
-      else
-        throw "Could not find file: #{path}"
+      module = Module(path, parent)
+      
+      context =
+        ENV: ENV
+        require: (path) -> 
+          require.call(module, path)
+        global: global
+        module: module
+        exports: module.exports
+        __filename: path
+        __dirname: path.split(fileSeparator)[0...-1]
+      
+      args = Object.keys(context)
+      values = args.map (name) -> context[name]
+
+      Function(args..., program).apply(module, values)
+
+      return module
 
 TODO: Package loading
 
