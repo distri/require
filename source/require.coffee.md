@@ -25,11 +25,19 @@ File separator is '/'
 Because we're in the browser window is global.
 
     global = window
-    
+
+A top-level module so that all other modules won't have to be orphans.
+
+    rootModule =
+      path: "/"
+
 Require a module based on a path. Each file is its own separate module.
 
     require = (path) ->
+      console.log "requiring #{path}"
       parent = this
+      
+      console.log parent
 
       if isPackage(path)
         # TODO
@@ -74,9 +82,10 @@ Load a file from within our package.
     loadModule = (path) ->
       program = ENV.distribution[path]
 
-      throw "Could not find file: #{path}" unless content?
+      throw "Could not find file: #{path}" unless program?
 
       module =
+        path: path
         exports: {}
 
       context =
@@ -116,7 +125,7 @@ and must export our own global reference.
 
     if module?
       module.exports = (path) ->
-        require(path)
+        require.call(rootModule, path)
     else
       @require = (path) ->
-        require(path)
+        require.call(rootModule, path)
