@@ -13,30 +13,6 @@ possible uses.
 Implementation
 --------------
 
-A simple translation of the Node.js module creator, keeping the same interface.
-
-    Module = (id, parent) ->
-      self =
-        children: []
-        id: id
-        exports: {}
-        filename: null
-        loaded: false
-        parent: parent
-        
-      parent?.children.push(self)
-        
-      return self
-
-Transitional style of exports, if `module` exists because we are using a module
-system then export in that manner, otherwise we are not using a module system
-and must export our own global reference.
-
-    if module?
-      module.exports = Module
-    else
-      @Module = Module
-
 Keep a cache of loaded modules so that multiple calls to the same name return
 the same module.
 
@@ -54,12 +30,13 @@ Require a module based on a path. Each file is its own separate module.
 
     require = (path) ->
       parent = this
-      
+
       if isPackage(path)
         # TODO
         return {}
-      
-      localPath = parent.filename.split(fileSeparator)[0...-1]
+
+      localPath = parent?.path.split(fileSeparator) or []
+
       normalizedPath = normalizePath(path, localPath)
       
       module = 
@@ -98,9 +75,10 @@ Load a file from within our package.
       program = ENV.distribution[path]
 
       throw "Could not find file: #{path}" unless content?
-      
-      module = Module(path, parent)
-      
+
+      module =
+        exports: {}
+
       context =
         ENV: ENV
         require: (path) -> 
@@ -132,3 +110,13 @@ Node may need to check for either `path/somefile.js` or `path/somefile.coffee`
 that will already have been resolved for us and we will only check 
 `path/somefile`
 
+Transitional style of exports, if `module` exists because we are using a module
+system then export in that manner, otherwise we are not using a module system
+and must export our own global reference.
+
+    if module?
+      module.exports = (path) ->
+        require(path)
+    else
+      @require = (path) ->
+        require(path)
