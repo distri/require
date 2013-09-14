@@ -123,7 +123,7 @@ specified in the package is loaded.
     loadPackage = (parentModule, package, path) ->
       path ||= package.entryPoint
       
-      loadPath.call(parentModule
+      loadPath(parentModule, package, path)
 
 Load a file from within our package.
 
@@ -180,7 +180,7 @@ and must export our own global reference.
 
     if module?
       module.exports = (path) ->
-        loadPath.call(rootModule, path)
+        loadPath(rootModule, path)
     else
       @require = (path) ->
-        loadPath.call(rootModule, path)
+        loadPath(rootModule, ENV.root, path)
