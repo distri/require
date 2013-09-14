@@ -64,7 +64,7 @@
           packagePath = path.replace(otherPackage, "");
           return loadPackage(module, pkg.dependencies[otherPackage], packagePath);
         } else {
-          return loadPath.call(module, pkg, path);
+          return loadPath(module, pkg, path);
         }
       },
       global: global,
