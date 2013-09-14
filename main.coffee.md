@@ -48,7 +48,7 @@ Require a module in the parent directory
 
 >     require "../nuts"
 
-Require a module from the root directory of its package
+Require a module from the root directory in the same package
 
 >     require "/silence"
 
