@@ -178,9 +178,16 @@ Transitional style of exports, if `module` exists because we are using a module
 system then export in that manner, otherwise we are not using a module system
 and must export our own global reference.
 
+    externalRequire = (path) ->
+      loadPath(rootModule, ENV.root, path)
+
     if module?
-      module.exports = (path) ->
-        loadPath(rootModule, path)
+      module.exports = externalRequire
     else
-      @require = (path) ->
-        loadPath(rootModule, ENV.root, path)
+      @require = externalRequire
+
+Notes
+-----
+
+An app has a local `ENV`. That `ENV` has a property `root` which is the root
+package.
