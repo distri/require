@@ -143,7 +143,7 @@ Load a file from within our package.
             packagePath = path.replace(otherPackage, "")
             loadPackage(module, pkg.dependencies[otherPackage], packagePath)
           else
-            loadPath.call(module, pkg, path)
+            loadPath(module, pkg, path)
         global: global
         module: module
         exports: module.exports
