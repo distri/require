@@ -181,7 +181,7 @@ system then export in that manner, otherwise we are not using a module system
 and must export our own global reference.
 
     externalRequire = (path) ->
-      loadPath(rootModule, ENV.root, path)
+      loadPath(rootModule, ENV.root or ENV, path)
 
     if module?
       module.exports = externalRequire
