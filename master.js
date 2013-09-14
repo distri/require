@@ -15,7 +15,7 @@
     localPath = parentModule.path.split(fileSeparator);
     normalizedPath = normalizePath(path, localPath);
     cache = (pkg.cache || (pkg.cache = {}));
-    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(normalizedPath, parentModule));
+    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(pkg, normalizedPath));
     return module.exports;
   };
 
