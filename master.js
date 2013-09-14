@@ -47,14 +47,15 @@
   };
 
   loadModule = function(pkg, path) {
-    var args, context, module, program, values;
+    var args, context, dirname, module, program, values;
     console.log("Loading module from package " + pkg + " at " + path);
     program = pkg.distribution[path].content;
     if (program == null) {
       throw "Could not find file: " + path + " in package " + pkg;
     }
+    dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
     module = {
-      path: path,
+      path: dirname,
       exports: {}
     };
     context = {
@@ -71,7 +72,7 @@
       module: module,
       exports: module.exports,
       __filename: path,
-      __dirname: path.split(fileSeparator).slice(0, -1)
+      __dirname: dirname
     };
     args = Object.keys(context);
     values = args.map(function(name) {
