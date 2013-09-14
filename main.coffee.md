@@ -140,12 +140,28 @@ Load a file from within our package.
         exports: {}
 
       context =
+
+A `require` function is exposed to modules so they may require other modules.
+
         require: (path) ->
+
+If we are loading a package in another module then we strip out the module part
+of the name and use the `rootModule` rather than the local module we came from.
+
+That way our local path won't affect the lookup path in another package.
+
           if otherPackage = isPackage(path)
             packagePath = path.replace(otherPackage, "")
-            loadPackage(module, pkg.dependencies[otherPackage], packagePath)
+            loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath)
+
+Load a module within our package, using the requiring module as a parent for
+local path resolution.
+
           else
             loadPath(module, pkg, path)
+        
+Additional propertise we expose to modules.
+        
         global: global
         module: module
         exports: module.exports
@@ -170,26 +186,26 @@ TODO: Package loading
       else
         false
 
+    externalRequire = (path) ->
+      loadPath(rootModule, ENV, path)
+
+Because we can't actually `require('require')` we need to export it a little
+differently.
+
+    @require = externalRequire
+
+Notes
+-----
+
+An app has a local `ENV`. `ENV` is the root package.
+
+We have to use `pkg` because `package` is a reserved word.
+
 Node needs to check file extensions, but because we have a compile step we are
 able to compile all files extensionlessly based only on their path. So while
 Node may need to check for either `path/somefile.js` or `path/somefile.coffee` 
 that will already have been resolved for us and we will only check 
 `path/somefile`
 
-Transitional style of exports, if `module` exists because we are using a module
-system then export in that manner, otherwise we are not using a module system
-and must export our own global reference.
-
-    externalRequire = (path) ->
-      loadPath(rootModule, ENV.root or ENV, path)
-
-    if module?
-      module.exports = externalRequire
-    else
-      @require = externalRequire
-
-Notes
------
-
-An app has a local `ENV`. That `ENV` has a property `root` which is the root
-package.
+File extensions may come in handy if we want to skip the compile step and
+compile on the fly at runtime.
