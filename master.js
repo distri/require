@@ -63,7 +63,7 @@
         var otherPackage, packagePath;
         if (otherPackage = isPackage(path)) {
           packagePath = path.replace(otherPackage, "");
-          return loadPackage(module, pkg.dependencies[otherPackage], packagePath);
+          return loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath);
         } else {
           return loadPath(module, pkg, path);
         }
@@ -91,13 +91,9 @@
   };
 
   externalRequire = function(path) {
-    return loadPath(rootModule, ENV.root || ENV, path);
+    return loadPath(rootModule, ENV, path);
   };
 
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = externalRequire;
-  } else {
-    this.require = externalRequire;
-  }
+  this.require = externalRequire;
 
 }).call(this);
