@@ -84,12 +84,12 @@ A top-level module so that all other modules won't have to be orphans.
 Require a module given a path within a package. Each file is its own separate 
 module. An application is composed of packages.
 
-    loadPath = (parentModule, package, path) ->
+    loadPath = (parentModule, pkg, path) ->
       localPath = parentModule.path.split(fileSeparator)
 
       normalizedPath = normalizePath(path, localPath)
       
-      cache = (package.cache ||= {})
+      cache = (pkg.cache ||= {})
       
       module = 
         cache[normalizedPath] ||= loadModule(normalizedPath, parentModule)
@@ -120,18 +120,18 @@ Chew up all the pieces into a standardized path.
 path is given the module at that path is loaded, otherwise the `entryPoint`
 specified in the package is loaded.
 
-    loadPackage = (parentModule, package, path) ->
-      path ||= package.entryPoint
+    loadPackage = (parentModule, pkg, path) ->
+      path ||= pkg.entryPoint
       
-      loadPath(parentModule, package, path)
+      loadPath(parentModule, pkg, path)
 
 Load a file from within our package.
 
-    loadModule = (package, path) ->
-      console.log "Loading module from package #{package} at #{path}"
-      program = package.distribution[path].content
+    loadModule = (pkg, path) ->
+      console.log "Loading module from package #{pkg} at #{path}"
+      program = pkg.distribution[path].content
 
-      throw "Could not find file: #{path} in package #{package}" unless program?
+      throw "Could not find file: #{path} in package #{pkg}" unless program?
 
       module =
         path: path
@@ -141,9 +141,9 @@ Load a file from within our package.
         require: (path) ->
           if otherPackage = isPackage(path)
             packagePath = path.replace(otherPackage, "")
-            loadPackage(module, package.dependencies[otherPackage], packagePath)
+            loadPackage(module, pkg.dependencies[otherPackage], packagePath)
           else
-            loadPath.call(module, package, path)
+            loadPath.call(module, pkg, path)
         global: global
         module: module
         exports: module.exports
