@@ -92,7 +92,7 @@ module. An application is composed of packages.
       cache = (pkg.cache ||= {})
       
       module = 
-        cache[normalizedPath] ||= loadModule(normalizedPath, parentModule)
+        cache[normalizedPath] ||= loadModule(pkg, normalizedPath)
 
       return module.exports
 
