@@ -133,8 +133,10 @@ Load a file from within our package.
 
       throw "Could not find file: #{path} in package #{pkg}" unless program?
 
+      dirname = path.split(fileSeparator)[0...-1].join(fileSeparator)
+
       module =
-        path: path
+        path: dirname
         exports: {}
 
       context =
@@ -148,7 +150,7 @@ Load a file from within our package.
         module: module
         exports: module.exports
         __filename: path
-        __dirname: path.split(fileSeparator)[0...-1]
+        __dirname: dirname
       
       args = Object.keys(context)
       values = args.map (name) -> context[name]
