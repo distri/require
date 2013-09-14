@@ -10,13 +10,63 @@ maintains encapsulation because it is impossible from within a module to know
 what external name would be correct to prevent errors of composition in all
 possible uses.
 
+Definitions
+-----------
+
+## Module
+
+A module is a file.
+
+## Package
+
+A package is an aggregation of modules. A package is a json file that lives on
+the internet. 
+
+It has the following properties:
+
+- distribution An object whose keys are paths an properties are `fileData`
+- entryPoint Path to the primary module that requiring this package will require.
+- dependencies An object whose keys are names and whose values are urls, 
+  bundled packages, or package reference objects.
+
+It may have additional properties such as `source`, `repository`, and `docs`.
+
+## Application
+
+An application is a package which has an `entryPoint` and may have dependencies.
+An application's dependencies may have dependencies. Dependencies may be 
+bundled with a package or resolved at a separate time.
+
+Uses
+----
+
+From a module require another module in the same package.
+
+>     require "./soup"
+
+Require a module in the parent directory
+
+>     require "../nuts"
+
+Require a module from the root directory of its package
+
+>     require "/silence"
+
+From a module within a package, require a dependent package.
+
+>     require "console"
+
+The dependency will be delcared something like
+
+>     dependencies:
+>       console: "http://strd6.github.io/console/v1.2.2.json"
+
+You may also require an optional module from within another package
+
+>     require "console/extras"
+
 Implementation
 --------------
-
-Keep a cache of loaded modules so that multiple calls to the same name return
-the same module.
-
-    cache = {}
     
 File separator is '/'
 
@@ -31,23 +81,18 @@ A top-level module so that all other modules won't have to be orphans.
     rootModule =
       path: ""
 
-Require a module based on a path. Each file is its own separate module.
+Require a module given a path within a package. Each file is its own separate 
+module. An application is composed of packages.
 
-    require = (path) ->
-      parent = this
-      
-      console.log parent
-
-      if isPackage(path)
-        # TODO
-        return {}
-
-      localPath = parent.path.split(fileSeparator)
+    loadPath = (parentModule, package, path) ->
+      localPath = parentModule.path.split(fileSeparator)
 
       normalizedPath = normalizePath(path, localPath)
       
+      cache = (package.cache ||= {})
+      
       module = 
-        cache[normalizedPath] ||= loadModule(normalizedPath, parent)
+        cache[normalizedPath] ||= loadModule(normalizedPath, parentModule)
 
       return module.exports
 
@@ -71,22 +116,34 @@ Chew up all the pieces into a standardized path.
             
       return result.join(fileSeparator)
 
+`loadPackage` Loads a module from a package, optionally specifying a path. If a
+path is given the module at that path is loaded, otherwise the `entryPoint`
+specified in the package is loaded.
+
+    loadPackage = (parentModule, package, path) ->
+      path ||= package.entryPoint
+      
+      loadPath.call(parentModule
+
 Load a file from within our package.
 
-    loadModule = (path) ->
-      console.log "Loading module at #{path}"
-      program = ENV.distribution[path].content
+    loadModule = (package, path) ->
+      console.log "Loading module from package #{package} at #{path}"
+      program = package.distribution[path].content
 
-      throw "Could not find file: #{path}" unless program?
+      throw "Could not find file: #{path} in package #{package}" unless program?
 
       module =
         path: path
         exports: {}
 
       context =
-        ENV: ENV
-        require: (path) -> 
-          require.call(module, path)
+        require: (path) ->
+          if otherPackage = isPackage(path)
+            packagePath = path.replace(otherPackage, "")
+            loadPackage(module, package.dependencies[otherPackage], packagePath)
+          else
+            loadPath.call(module, package, path)
         global: global
         module: module
         exports: module.exports
@@ -103,10 +160,13 @@ Load a file from within our package.
 TODO: Package loading
 
     isPackage = (path) ->
-      !(path.startsWith('/') or
-        path.startsWith('./') or
-        path.startsWith('../')
+      if !(path.startsWith(fileSeparator) or
+        path.startsWith(".#{fileSeparator}") or
+        path.startsWith("..#{fileSeparator}")
       )
+        path.split(fileSeparator)[0]
+      else
+        false
 
 Node needs to check file extensions, but because we have a compile step we are
 able to compile all files extensionlessly based only on their path. So while
@@ -120,7 +180,7 @@ and must export our own global reference.
 
     if module?
       module.exports = (path) ->
-        require.call(rootModule, path)
+        loadPath.call(rootModule, path)
     else
       @require = (path) ->
-        require.call(rootModule, path)
+        loadPath.call(rootModule, path)
