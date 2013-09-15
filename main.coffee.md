@@ -188,16 +188,26 @@ local path resolution.
 
     generateRequireFn = (module, pkg) ->
       (path) ->
-        if otherPackage = isPackage(path)
-          packagePath = path.replace(otherPackage, "")
-          loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath)
+        # All modules loaded from existing modules will have a package, but
+        # for the initial one we use the ENV
+        pkg ?= ENV
+
+        if otherPackageName = isPackage(path)
+          packagePath = path.replace(otherPackageName, "")
+          
+          otherPackage = pkg.dependencies[otherPackageName]
+          
+          unless otherPackage
+            throw "Package: #{otherPackageName} not found."
+          
+          loadPackage(rootModule, otherPackage, packagePath)
         else
           loadPath(module, pkg, path)
 
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
-    @require = generateRequireFn(rootModule, ENV)
+    @require = generateRequireFn(rootModule)
 
 Notes
 -----
