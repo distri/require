@@ -21,7 +21,7 @@
     "test/require.coffee.md": {
       "path": "test/require.coffee.md",
       "mode": "100644",
-      "content": "Testing out this crazy require thing\n\n    describe \"require\", ->\n      it \"should exist globally until we bootstrap it\", ->\n        assert window.require\n\n      it \"should be able to require a file that exists\", ->\n        assert window.require('./main')\n",
+      "content": "Testing out this crazy require thing\n\n    describe \"require\", ->\n      it \"should exist globally until we bootstrap it\", ->\n        assert window.require\n\n      it \"should be able to require a file that exists\", ->\n        assert window.require('./main')\n\n      it \"should be able to require from the root path within a package\", ->\n        assert require('/main')\n",
       "type": "blob"
     }
   },
@@ -33,7 +33,7 @@
     },
     "test/require": {
       "path": "test/require",
-      "content": "(function() {\n  describe(\"require\", function() {\n    it(\"should exist globally until we bootstrap it\", function() {\n      return assert(window.require);\n    });\n    return it(\"should be able to require a file that exists\", function() {\n      return assert(window.require('./main'));\n    });\n  });\n\n}).call(this);\n",
+      "content": "(function() {\n  describe(\"require\", function() {\n    it(\"should exist globally until we bootstrap it\", function() {\n      return assert(window.require);\n    });\n    it(\"should be able to require a file that exists\", function() {\n      return assert(window.require('./main'));\n    });\n    return it(\"should be able to require from the root path within a package\", function() {\n      return assert(require('/main'));\n    });\n  });\n\n}).call(this);\n",
       "type": "blob"
     }
   },
