@@ -1,10 +1,12 @@
 (function() {
-  var externalRequire, fileSeparator, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
+  var defaultEntryPoint, externalRequire, fileSeparator, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
     __slice = [].slice;
 
   fileSeparator = '/';
 
   global = window;
+
+  defaultEntryPoint = "main";
 
   rootModule = {
     path: ""
@@ -42,17 +44,16 @@
   };
 
   loadPackage = function(parentModule, pkg, path) {
-    path || (path = pkg.entryPoint);
+    path || (path = pkg.entryPoint || defaultEntryPoint);
     return loadPath(parentModule, pkg, path);
   };
 
   loadModule = function(pkg, path) {
-    var args, context, dirname, module, program, values;
-    console.log("Loading module from package " + pkg + " at " + path);
-    program = pkg.distribution[path].content;
-    if (program == null) {
-      throw "Could not find file: " + path + " in package " + pkg;
+    var args, context, dirname, file, module, program, values;
+    if (!(file = pkg.distribution[path])) {
+      throw "Could not find file at " + path + " in " + pkg;
     }
+    program = file.content;
     dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
     module = {
       path: dirname,
