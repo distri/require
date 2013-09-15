@@ -1,5 +1,5 @@
 (function() {
-  var defaultEntryPoint, externalRequire, fileSeparator, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
+  var defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
     __slice = [].slice;
 
   fileSeparator = '/';
@@ -60,15 +60,7 @@
       exports: {}
     };
     context = {
-      require: function(path) {
-        var otherPackage, packagePath;
-        if (otherPackage = isPackage(path)) {
-          packagePath = path.replace(otherPackage, "");
-          return loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath);
-        } else {
-          return loadPath(module, pkg, path);
-        }
-      },
+      require: generateRequireFn(module, pkg),
       global: global,
       module: module,
       exports: module.exports,
@@ -91,10 +83,18 @@
     }
   };
 
-  externalRequire = function(path) {
-    return loadPath(rootModule, ENV, path);
+  generateRequireFn = function(module, pkg) {
+    return function(path) {
+      var otherPackage, packagePath;
+      if (otherPackage = isPackage(path)) {
+        packagePath = path.replace(otherPackage, "");
+        return loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath);
+      } else {
+        return loadPath(module, pkg, path);
+      }
+    };
   };
 
-  this.require = externalRequire;
+  this.require = generateRequireFn(rootModule, ENV);
 
 }).call(this);
