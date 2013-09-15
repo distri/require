@@ -142,29 +142,15 @@ Load a file from within a package.
         path: dirname
         exports: {}
 
-      context =
+This external context provides some variable that modules have access to.
 
 A `require` function is exposed to modules so they may require other modules.
 
-        require: (path) ->
+Additional properties such as a reference to the global object and some metadata
+are also exposed.
 
-If we are loading a package in another module then we strip out the module part
-of the name and use the `rootModule` rather than the local module we came from.
-
-That way our local path won't affect the lookup path in another package.
-
-          if otherPackage = isPackage(path)
-            packagePath = path.replace(otherPackage, "")
-            loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath)
-
-Load a module within our package, using the requiring module as a parent for
-local path resolution.
-
-          else
-            loadPath(module, pkg, path)
-        
-Additional propertise we expose to modules.
-        
+      context =
+        require: generateRequireFn(module, pkg)        
         global: global
         module: module
         exports: module.exports
@@ -174,11 +160,13 @@ Additional propertise we expose to modules.
       args = Object.keys(context)
       values = args.map (name) -> context[name]
 
+Execute the program in the context of the module with the given context.
+
       Function(args..., program).apply(module, values)
 
       return module
 
-TODO: Package loading
+Helper to detect if a given path is a package.
 
     isPackage = (path) ->
       if !(path.startsWith(fileSeparator) or
@@ -189,13 +177,27 @@ TODO: Package loading
       else
         false
 
-    externalRequire = (path) ->
-      loadPath(rootModule, ENV, path)
+Generate a require function for a given module in a package.
+
+If we are loading a package in another module then we strip out the module part
+of the name and use the `rootModule` rather than the local module we came from.
+That way our local path won't affect the lookup path in another package.
+
+Loading a module within our package, uses the requiring module as a parent for
+local path resolution.
+
+    generateRequireFn = (module, pkg) ->
+      (path) ->
+        if otherPackage = isPackage(path)
+          packagePath = path.replace(otherPackage, "")
+          loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath)
+        else
+          loadPath(module, pkg, path)
 
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
-    @require = externalRequire
+    @require = generateRequireFn(rootModule, ENV)
 
 Notes
 -----
@@ -212,3 +214,5 @@ that will already have been resolved for us and we will only check
 
 File extensions may come in handy if we want to skip the compile step and
 compile on the fly at runtime.
+
+Circular dependencies aren't supported and will probably crash.
