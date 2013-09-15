@@ -75,6 +75,10 @@ File separator is '/'
 Because we're in the browser window is global.
 
     global = window
+    
+Default entry point
+
+    defaultEntryPoint = "main"
 
 A top-level module so that all other modules won't have to be orphans.
 
@@ -121,18 +125,17 @@ path is given the module at that path is loaded, otherwise the `entryPoint`
 specified in the package is loaded.
 
     loadPackage = (parentModule, pkg, path) ->
-      path ||= pkg.entryPoint
+      path ||= (pkg.entryPoint || defaultEntryPoint)
       
       loadPath(parentModule, pkg, path)
 
-Load a file from within our package.
+Load a file from within a package.
 
     loadModule = (pkg, path) ->
-      console.log "Loading module from package #{pkg} at #{path}"
-      program = pkg.distribution[path].content
+      unless (file = pkg.distribution[path])
+        throw "Could not find file at #{path} in #{pkg}" 
 
-      throw "Could not find file: #{path} in package #{pkg}" unless program?
-
+      program = file.content
       dirname = path.split(fileSeparator)[0...-1].join(fileSeparator)
 
       module =
