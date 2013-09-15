@@ -85,16 +85,23 @@
 
   generateRequireFn = function(module, pkg) {
     return function(path) {
-      var otherPackage, packagePath;
-      if (otherPackage = isPackage(path)) {
-        packagePath = path.replace(otherPackage, "");
-        return loadPackage(rootModule, pkg.dependencies[otherPackage], packagePath);
+      var otherPackage, otherPackageName, packagePath;
+      if (pkg == null) {
+        pkg = ENV;
+      }
+      if (otherPackageName = isPackage(path)) {
+        packagePath = path.replace(otherPackageName, "");
+        otherPackage = pkg.dependencies[otherPackageName];
+        if (!otherPackage) {
+          throw "Package: " + otherPackageName + " not found.";
+        }
+        return loadPackage(rootModule, otherPackage, packagePath);
       } else {
         return loadPath(module, pkg, path);
       }
     };
   };
 
-  this.require = generateRequireFn(rootModule, ENV);
+  this.require = generateRequireFn(rootModule);
 
 }).call(this);
