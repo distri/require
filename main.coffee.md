@@ -89,7 +89,10 @@ Require a module given a path within a package. Each file is its own separate
 module. An application is composed of packages.
 
     loadPath = (parentModule, pkg, path) ->
-      localPath = parentModule.path.split(fileSeparator)
+      if path.startsWith('/')
+        localPath = []
+      else
+        localPath = parentModule.path.split(fileSeparator)
 
       normalizedPath = normalizePath(path, localPath)
       
@@ -133,7 +136,7 @@ Load a file from within a package.
 
     loadModule = (pkg, path) ->
       unless (file = pkg.distribution[path])
-        throw "Could not find file at #{path} in #{pkg}" 
+        throw "Could not find file at #{path} in #{pkg.name}" 
 
       program = file.content
       dirname = path.split(fileSeparator)[0...-1].join(fileSeparator)
@@ -196,6 +199,7 @@ local path resolution.
           packagePath = path.replace(otherPackageName, "")
           
           otherPackage = pkg.dependencies[otherPackageName]
+          otherPackage.name ?= otherPackageName
           
           unless otherPackage
             throw "Package: #{otherPackageName} not found."
