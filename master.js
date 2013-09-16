@@ -14,7 +14,11 @@
 
   loadPath = function(parentModule, pkg, path) {
     var cache, localPath, module, normalizedPath;
-    localPath = parentModule.path.split(fileSeparator);
+    if (path.startsWith('/')) {
+      localPath = [];
+    } else {
+      localPath = parentModule.path.split(fileSeparator);
+    }
     normalizedPath = normalizePath(path, localPath);
     cache = (pkg.cache || (pkg.cache = {}));
     module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(pkg, normalizedPath));
@@ -51,7 +55,7 @@
   loadModule = function(pkg, path) {
     var args, context, dirname, file, module, program, values;
     if (!(file = pkg.distribution[path])) {
-      throw "Could not find file at " + path + " in " + pkg;
+      throw "Could not find file at " + path + " in " + pkg.name;
     }
     program = file.content;
     dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
@@ -92,6 +96,9 @@
       if (otherPackageName = isPackage(path)) {
         packagePath = path.replace(otherPackageName, "");
         otherPackage = pkg.dependencies[otherPackageName];
+        if (otherPackage.name == null) {
+          otherPackage.name = otherPackageName;
+        }
         if (!otherPackage) {
           throw "Package: " + otherPackageName + " not found.";
         }
