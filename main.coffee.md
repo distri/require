@@ -72,10 +72,10 @@ File separator is '/'
 
     fileSeparator = '/'
 
-Because we're in the browser window is global.
+In the browser `global` is `window`.
 
     global = window
-    
+
 Default entry point
 
     defaultEntryPoint = "main"
@@ -153,7 +153,7 @@ Additional properties such as a reference to the global object and some metadata
 are also exposed.
 
       context =
-        require: generateRequireFn(module, pkg)        
+        require: generateRequireFn(pkg, module)        
         global: global
         module: module
         exports: module.exports
@@ -163,7 +163,7 @@ are also exposed.
       args = Object.keys(context)
       values = args.map (name) -> context[name]
 
-Execute the program in the context of the module with the given context.
+Execute the program within the module and given context.
 
       Function(args..., program).apply(module, values)
 
@@ -189,8 +189,9 @@ That way our local path won't affect the lookup path in another package.
 Loading a module within our package, uses the requiring module as a parent for
 local path resolution.
 
-    generateRequireFn = (module, pkg) ->
+    generateRequireFn = (pkg, module=rootModule) ->
       (path) ->
+        # TODO: Remove this ENV ref, and force use of generator externally
         # All modules loaded from existing modules will have a package, but
         # for the initial one we use the ENV
         pkg ?= ENV
@@ -211,7 +212,9 @@ local path resolution.
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
-    @require = generateRequireFn(rootModule)
+    Object.extend exports ? global,
+      generate: generateRequireFn
+      require: generateRequireFn(null, rootModule)
 
 Notes
 -----
