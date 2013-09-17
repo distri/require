@@ -94,9 +94,6 @@
     }
     return function(path) {
       var otherPackage, otherPackageName, packagePath;
-      if (pkg == null) {
-        pkg = ENV;
-      }
       if (otherPackageName = isPackage(path)) {
         packagePath = path.replace(otherPackageName, "");
         otherPackage = pkg.dependencies[otherPackageName];
@@ -114,15 +111,13 @@
   };
 
   Require = {
-    generateFor: generateRequireFn,
-    require: generateRequireFn(null, rootModule)
+    generateFor: generateRequireFn
   };
 
   if (typeof exports !== "undefined" && exports !== null) {
-    Object.extend(typeof exports !== "undefined" && exports !== null ? exports : global, Require);
+    Object.extend(exports, Require);
   } else {
     global.Require = Require;
-    global.require = Require.require;
   }
 
 }).call(this);
