@@ -221,6 +221,8 @@ differently.
       Object.extend exports ? global, Require
     else
       global.Require = Require
+      # TODO: Remove this transitional require
+      global.require = Require.require
 
 Notes
 -----
