@@ -1,5 +1,5 @@
 (function() {
-  var defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
+  var Require, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
     __slice = [].slice;
 
   fileSeparator = '/';
@@ -112,9 +112,15 @@
     };
   };
 
-  Object.extend(typeof exports !== "undefined" && exports !== null ? exports : global, {
-    generate: generateRequireFn,
+  Require = {
+    generateFor: generateRequireFn,
     require: generateRequireFn(null, rootModule)
-  });
+  };
+
+  if (typeof exports !== "undefined" && exports !== null) {
+    Object.extend(typeof exports !== "undefined" && exports !== null ? exports : global, Require);
+  } else {
+    global.Require = Require;
+  }
 
 }).call(this);
