@@ -212,9 +212,15 @@ local path resolution.
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
-    Object.extend exports ? global,
-      generate: generateRequireFn
+    Require = 
+      generateFor: generateRequireFn
+      # TODO: Remove this transitional require
       require: generateRequireFn(null, rootModule)
+
+    if exports?
+      Object.extend exports ? global, Require
+    else
+      global.Require = Require
 
 Notes
 -----
