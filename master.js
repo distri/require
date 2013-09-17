@@ -64,7 +64,7 @@
       exports: {}
     };
     context = {
-      require: generateRequireFn(module, pkg),
+      require: generateRequireFn(pkg, module),
       global: global,
       module: module,
       exports: module.exports,
@@ -87,7 +87,10 @@
     }
   };
 
-  generateRequireFn = function(module, pkg) {
+  generateRequireFn = function(pkg, module) {
+    if (module == null) {
+      module = rootModule;
+    }
     return function(path) {
       var otherPackage, otherPackageName, packagePath;
       if (pkg == null) {
@@ -109,6 +112,9 @@
     };
   };
 
-  this.require = generateRequireFn(rootModule);
+  Object.extend(typeof exports !== "undefined" && exports !== null ? exports : global, {
+    generate: generateRequireFn,
+    require: generateRequireFn(null, rootModule)
+  });
 
 }).call(this);
