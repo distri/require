@@ -12,3 +12,13 @@ Testing out this crazy require thing
 
       it "should be able to require from the root path within a package", ->
         assert require('/main')
+
+    describe "module context", ->
+      it "should know __dirname", ->
+        assert.equal "test", __dirname
+        
+      it "should know __filename", ->
+        assert.equal "test/require", __filename
+        
+      it "should know its package", ->
+        assert PACKAGE

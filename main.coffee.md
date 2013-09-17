@@ -157,6 +157,7 @@ are also exposed.
         global: global
         module: module
         exports: module.exports
+        PACKAGE: pkg
         __filename: path
         __dirname: dirname
       
