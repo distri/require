@@ -192,11 +192,6 @@ local path resolution.
 
     generateRequireFn = (pkg, module=rootModule) ->
       (path) ->
-        # TODO: Remove this ENV ref, and force use of generator externally
-        # All modules loaded from existing modules will have a package, but
-        # for the initial one we use the ENV
-        pkg ?= ENV
-
         if otherPackageName = isPackage(path)
           packagePath = path.replace(otherPackageName, "")
           
@@ -215,20 +210,14 @@ differently.
 
     Require = 
       generateFor: generateRequireFn
-      # TODO: Remove this transitional require
-      require: generateRequireFn(null, rootModule)
 
     if exports?
-      Object.extend exports ? global, Require
+      Object.extend exports, Require
     else
       global.Require = Require
-      # TODO: Remove this transitional require
-      global.require = Require.require
 
 Notes
 -----
-
-An app has a local `ENV`. `ENV` is the root package.
 
 We have to use `pkg` because `package` is a reserved word.
 

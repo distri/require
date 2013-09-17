@@ -1,11 +1,11 @@
 Testing out this crazy require thing
 
     # Load our latest require code for testing
-    require = global.require('/main').require
+    # require = global.require('/main').generateFor(PACKAGE)
 
     describe "require", ->
       it "should exist globally until we bootstrap it", ->
-        assert global.require
+        assert !global.require
 
       it "should be able to require a file that exists with a relative path", ->
         assert require('../main')
