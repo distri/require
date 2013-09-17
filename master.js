@@ -121,6 +121,7 @@
     Object.extend(typeof exports !== "undefined" && exports !== null ? exports : global, Require);
   } else {
     global.Require = Require;
+    global.require = Require.require;
   }
 
 }).call(this);
