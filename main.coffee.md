@@ -80,6 +80,10 @@ Default entry point
 
     defaultEntryPoint = "main"
 
+A sentinal against circular requires.
+
+    circularGuard = {}
+
 A top-level module so that all other modules won't have to be orphans.
 
     rootModule =
@@ -98,8 +102,12 @@ module. An application is composed of packages.
       
       cache = (pkg.cache ||= {})
       
-      module = 
-        cache[normalizedPath] ||= loadModule(pkg, normalizedPath)
+      if module = cache[normalizedPath]
+        if module is circularGuard
+          throw "Circular dependency detected when requiring #{normalizedPath}"
+      else
+        cache[normalizedPath] = circularGuard
+        cache[normalizedPath] = module = loadModule(pkg, normalizedPath)
 
       return module.exports
 
@@ -194,13 +202,12 @@ local path resolution.
       (path) ->
         if otherPackageName = isPackage(path)
           packagePath = path.replace(otherPackageName, "")
-          
-          otherPackage = pkg.dependencies[otherPackageName]
-          otherPackage.name ?= otherPackageName
-          
-          unless otherPackage
+
+          unless otherPackage = pkg.dependencies[otherPackageName]
             throw "Package: #{otherPackageName} not found."
-          
+
+          otherPackage.name ?= otherPackageName
+
           loadPackage(rootModule, otherPackage, packagePath)
         else
           loadPath(module, pkg, path)
