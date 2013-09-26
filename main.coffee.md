@@ -107,7 +107,7 @@ module. An application is composed of packages.
           throw "Circular dependency detected when requiring #{normalizedPath}"
       else
         cache[normalizedPath] = circularGuard
-        cache[normalizedPath] = loadModule(pkg, normalizedPath)
+        cache[normalizedPath] = module = loadModule(pkg, normalizedPath)
 
       return module.exports
 
@@ -202,13 +202,12 @@ local path resolution.
       (path) ->
         if otherPackageName = isPackage(path)
           packagePath = path.replace(otherPackageName, "")
-          
-          otherPackage = pkg.dependencies[otherPackageName]
-          otherPackage.name ?= otherPackageName
-          
-          unless otherPackage
+
+          unless otherPackage = pkg.dependencies[otherPackageName]
             throw "Package: #{otherPackageName} not found."
-          
+
+          otherPackage.name ?= otherPackageName
+
           loadPackage(rootModule, otherPackage, packagePath)
         else
           loadPath(module, pkg, path)
