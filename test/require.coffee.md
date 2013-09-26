@@ -8,7 +8,13 @@ Testing out this crazy require thing
         assert !global.require
 
       it "should be able to require a file that exists with a relative path", ->
-        assert require('../main')
+        assert require('../terminal')
+        
+      it "should get whatever the file exports", ->
+        assert require('../terminal').something
+      
+      it "should not get something the file doesn't export", ->
+        assert !require('../terminal').something2
 
       it "should be able to require from the root path within a package", ->
         assert require('/main')
