@@ -1,4 +1,4 @@
-{
+window["STRd6/require:master"]({
   "version": "0.1.0",
   "source": {
     "LICENSE": {
@@ -171,4 +171,4 @@
   "progenitor": {
     "url": "http://strd6.github.io/editor/"
   }
-}
+});

@@ -1,5 +1,5 @@
 (function() {
-  var Require, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
+  var Require, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
     __slice = [].slice;
 
   fileSeparator = '/';
@@ -7,6 +7,8 @@
   global = window;
 
   defaultEntryPoint = "main";
+
+  circularGuard = {};
 
   rootModule = {
     path: ""
@@ -21,7 +23,14 @@
     }
     normalizedPath = normalizePath(path, localPath);
     cache = (pkg.cache || (pkg.cache = {}));
-    module = cache[normalizedPath] || (cache[normalizedPath] = loadModule(pkg, normalizedPath));
+    if (module = cache[normalizedPath]) {
+      if (module === circularGuard) {
+        throw "Circular dependency detected when requiring " + normalizedPath;
+      }
+    } else {
+      cache[normalizedPath] = circularGuard;
+      cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
+    }
     return module.exports;
   };
 
@@ -96,12 +105,11 @@
       var otherPackage, otherPackageName, packagePath;
       if (otherPackageName = isPackage(path)) {
         packagePath = path.replace(otherPackageName, "");
-        otherPackage = pkg.dependencies[otherPackageName];
+        if (!(otherPackage = pkg.dependencies[otherPackageName])) {
+          throw "Package: " + otherPackageName + " not found.";
+        }
         if (otherPackage.name == null) {
           otherPackage.name = otherPackageName;
-        }
-        if (!otherPackage) {
-          throw "Package: " + otherPackageName + " not found.";
         }
         return loadPackage(rootModule, otherPackage, packagePath);
       } else {
