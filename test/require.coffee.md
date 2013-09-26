@@ -3,9 +3,6 @@ Testing out this crazy require thing
     # Load our latest require code for testing
     # NOTE: This causes the root for relative requires to be at the root dir, not the test dir
     latestRequire = require('/main').generateFor(PACKAGE)
-    
-    # TODO: Remove this once the editor is up to date with the latest
-    delete global.require
 
     describe "require", ->
       it "should not exist globally", ->
