@@ -29,7 +29,7 @@
       }
     } else {
       cache[normalizedPath] = circularGuard;
-      cache[normalizedPath] = loadModule(pkg, normalizedPath);
+      cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
     }
     return module.exports;
   };
@@ -105,12 +105,11 @@
       var otherPackage, otherPackageName, packagePath;
       if (otherPackageName = isPackage(path)) {
         packagePath = path.replace(otherPackageName, "");
-        otherPackage = pkg.dependencies[otherPackageName];
+        if (!(otherPackage = pkg.dependencies[otherPackageName])) {
+          throw "Package: " + otherPackageName + " not found.";
+        }
         if (otherPackage.name == null) {
           otherPackage.name = otherPackageName;
-        }
-        if (!otherPackage) {
-          throw "Package: " + otherPackageName + " not found.";
         }
         return loadPackage(rootModule, otherPackage, packagePath);
       } else {
