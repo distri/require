@@ -22,13 +22,25 @@ window["STRd6/require:throw-error-on-circular-require"]({
     "test/require.coffee.md": {
       "path": "test/require.coffee.md",
       "mode": "100644",
-      "content": "Testing out this crazy require thing\n\n    # Load our latest require code for testing\n    # require = global.require('/main').generateFor(PACKAGE)\n\n    describe \"require\", ->\n      it \"should not exist globally\", ->\n        assert !global.require\n\n      it \"should be able to require a file that exists with a relative path\", ->\n        assert require('../main')\n\n      it \"should be able to require from the root path within a package\", ->\n        assert require('/main')\n\n      it \"should throw a descriptive error when requring circular dependencies\", ->\n        assert.throws ->\n          require('./circular')\n\n      it \"should throw a descriptive error when requiring a package that doesn't exist\", ->\n      \n      it \"should throw a descriptive error when requiring a non-existent file within an external package\", ->\n      \n      it \"should throw a descriptive error when requiring a relative path that doesn't exist\", ->\n\n    describe \"module context\", ->\n      it \"should know __dirname\", ->\n        assert.equal \"test\", __dirname\n        \n      it \"should know __filename\", ->\n        assert.equal \"test/require\", __filename\n        \n      it \"should know its package\", ->\n        assert PACKAGE\n",
+      "content": "Testing out this crazy require thing\n\n    # Load our latest require code for testing\n    # require = global.require('/main').generateFor(PACKAGE)\n\n    describe \"require\", ->\n      it \"should not exist globally\", ->\n        assert !global.require\n\n      it \"should be able to require a file that exists with a relative path\", ->\n        assert require('../terminal')\n        \n      it \"should get whatever the file exports\", ->\n        assert require('../terminal').something\n      \n      it \"should not get something the file doesn't export\", ->\n        assert !require('../terminal').something2\n\n      it \"should be able to require from the root path within a package\", ->\n        assert require('/main')\n\n      it \"should throw a descriptive error when requring circular dependencies\", ->\n        assert.throws ->\n          require('./circular')\n\n      it \"should throw a descriptive error when requiring a package that doesn't exist\", ->\n      \n      it \"should throw a descriptive error when requiring a non-existent file within an external package\", ->\n      \n      it \"should throw a descriptive error when requiring a relative path that doesn't exist\", ->\n\n    describe \"module context\", ->\n      it \"should know __dirname\", ->\n        assert.equal \"test\", __dirname\n        \n      it \"should know __filename\", ->\n        assert.equal \"test/require\", __filename\n        \n      it \"should know its package\", ->\n        assert PACKAGE\n",
       "type": "blob"
     },
     "pixie.cson": {
       "path": "pixie.cson",
       "mode": "100644",
       "content": "version: \"0.1.0\"\nremoteDependencies: [\n  \"//code.jquery.com/jquery-1.10.1.min.js\"\n  \"http://strd6.github.io/tempest/javascripts/envweb.js\"\n  \"http://strd6.github.io/require/master.js\"\n]\n",
+      "type": "blob"
+    },
+    "circular.coffee.md": {
+      "path": "circular.coffee.md",
+      "mode": "100644",
+      "content": "This test file illustrates a circular requirement and should throw an error.\n\n    require \"./circular\"\n",
+      "type": "blob"
+    },
+    "terminal.coffee.md": {
+      "path": "terminal.coffee.md",
+      "mode": "100644",
+      "content": "A test file for requiring a file that has no dependencies. It should succeed.\n\n    exports.something = true\n",
       "type": "blob"
     }
   },
@@ -40,7 +52,17 @@ window["STRd6/require:throw-error-on-circular-require"]({
     },
     "test/require": {
       "path": "test/require",
-      "content": "(function() {\n  describe(\"require\", function() {\n    it(\"should not exist globally\", function() {\n      return assert(!global.require);\n    });\n    it(\"should be able to require a file that exists with a relative path\", function() {\n      return assert(require('../main'));\n    });\n    it(\"should be able to require from the root path within a package\", function() {\n      return assert(require('/main'));\n    });\n    it(\"should throw a descriptive error when requring circular dependencies\", function() {\n      return assert.throws(function() {\n        return require('./circular');\n      });\n    });\n    it(\"should throw a descriptive error when requiring a package that doesn't exist\", function() {});\n    it(\"should throw a descriptive error when requiring a non-existent file within an external package\", function() {});\n    return it(\"should throw a descriptive error when requiring a relative path that doesn't exist\", function() {});\n  });\n\n  describe(\"module context\", function() {\n    it(\"should know __dirname\", function() {\n      return assert.equal(\"test\", __dirname);\n    });\n    it(\"should know __filename\", function() {\n      return assert.equal(\"test/require\", __filename);\n    });\n    return it(\"should know its package\", function() {\n      return assert(PACKAGE);\n    });\n  });\n\n}).call(this);\n",
+      "content": "(function() {\n  describe(\"require\", function() {\n    it(\"should not exist globally\", function() {\n      return assert(!global.require);\n    });\n    it(\"should be able to require a file that exists with a relative path\", function() {\n      return assert(require('../terminal'));\n    });\n    it(\"should get whatever the file exports\", function() {\n      return assert(require('../terminal').something);\n    });\n    it(\"should not get something the file doesn't export\", function() {\n      return assert(!require('../terminal').something2);\n    });\n    it(\"should be able to require from the root path within a package\", function() {\n      return assert(require('/main'));\n    });\n    it(\"should throw a descriptive error when requring circular dependencies\", function() {\n      return assert.throws(function() {\n        return require('./circular');\n      });\n    });\n    it(\"should throw a descriptive error when requiring a package that doesn't exist\", function() {});\n    it(\"should throw a descriptive error when requiring a non-existent file within an external package\", function() {});\n    return it(\"should throw a descriptive error when requiring a relative path that doesn't exist\", function() {});\n  });\n\n  describe(\"module context\", function() {\n    it(\"should know __dirname\", function() {\n      return assert.equal(\"test\", __dirname);\n    });\n    it(\"should know __filename\", function() {\n      return assert.equal(\"test/require\", __filename);\n    });\n    return it(\"should know its package\", function() {\n      return assert(PACKAGE);\n    });\n  });\n\n}).call(this);\n",
+      "type": "blob"
+    },
+    "circular": {
+      "path": "circular",
+      "content": "(function() {\n  require(\"./circular\");\n\n}).call(this);\n",
+      "type": "blob"
+    },
+    "terminal": {
+      "path": "terminal",
+      "content": "(function() {\n  exports.something = true;\n\n}).call(this);\n",
       "type": "blob"
     }
   },
