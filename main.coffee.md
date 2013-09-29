@@ -93,7 +93,7 @@ Require a module given a path within a package. Each file is its own separate
 module. An application is composed of packages.
 
     loadPath = (parentModule, pkg, path) ->
-      if path.startsWith('/')
+      if startsWith(path, '/')
         localPath = []
       else
         localPath = parentModule.path.split(fileSeparator)
@@ -181,9 +181,9 @@ Execute the program within the module and given context.
 Helper to detect if a given path is a package.
 
     isPackage = (path) ->
-      if !(path.startsWith(fileSeparator) or
-        path.startsWith(".#{fileSeparator}") or
-        path.startsWith("..#{fileSeparator}")
+      if !(startsWith(path, fileSeparator) or
+        startsWith(path, ".#{fileSeparator}") or
+        startsWith(path, "..#{fileSeparator}")
       )
         path.split(fileSeparator)[0]
       else
@@ -238,3 +238,9 @@ File extensions may come in handy if we want to skip the compile step and
 compile on the fly at runtime.
 
 Circular dependencies aren't supported and will probably crash.
+
+Helpers
+-------
+
+    startsWith = (string, prefix) ->
+      string.lastIndexOf(prefix, 0) is 0
