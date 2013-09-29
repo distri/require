@@ -215,13 +215,11 @@ local path resolution.
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
-    Require = 
-      generateFor: generateRequireFn
-
     if exports?
-      Object.extend exports, Require
+      exports.generateFor = generateRequireFn
     else
-      global.Require = Require
+      global.Require =
+        generateFor: generateRequireFn
 
 Notes
 -----

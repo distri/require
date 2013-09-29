@@ -1,5 +1,4 @@
-version: "0.2.0-alpha.0"
+version: "0.2.0-alpha.1"
 remoteDependencies: [
-  "http://strd6.github.io/tempest/javascripts/envweb.js"
-  "http://strd6.github.io/require/master.js"
+  "http://strd6.github.io/require/v0.2.0-alpha.0.js"
 ]
