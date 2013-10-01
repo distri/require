@@ -1,5 +1,5 @@
 (function() {
-  var Require, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule,
+  var circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule, startsWith,
     __slice = [].slice;
 
   fileSeparator = '/';
@@ -16,7 +16,7 @@
 
   loadPath = function(parentModule, pkg, path) {
     var cache, localPath, module, normalizedPath;
-    if (path.startsWith('/')) {
+    if (startsWith(path, '/')) {
       localPath = [];
     } else {
       localPath = parentModule.path.split(fileSeparator);
@@ -29,7 +29,13 @@
       }
     } else {
       cache[normalizedPath] = circularGuard;
-      cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
+      try {
+        cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
+      } finally {
+        if (cache[normalizedPath] === circularGuard) {
+          delete cache[normalizedPath];
+        }
+      }
     }
     return module.exports;
   };
@@ -90,7 +96,7 @@
   };
 
   isPackage = function(path) {
-    if (!(path.startsWith(fileSeparator) || path.startsWith("." + fileSeparator) || path.startsWith(".." + fileSeparator))) {
+    if (!(startsWith(path, fileSeparator) || startsWith(path, "." + fileSeparator) || startsWith(path, ".." + fileSeparator))) {
       return path.split(fileSeparator)[0];
     } else {
       return false;
@@ -118,14 +124,16 @@
     };
   };
 
-  Require = {
-    generateFor: generateRequireFn
-  };
-
   if (typeof exports !== "undefined" && exports !== null) {
-    Object.extend(exports, Require);
+    exports.generateFor = generateRequireFn;
   } else {
-    global.Require = Require;
+    global.Require = {
+      generateFor: generateRequireFn
+    };
   }
+
+  startsWith = function(string, prefix) {
+    return string.lastIndexOf(prefix, 0) === 0;
+  };
 
 }).call(this);
