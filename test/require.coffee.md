@@ -10,10 +10,10 @@ Testing out this crazy require thing
 
       it "should be able to require a file that exists with a relative path", ->
         assert latestRequire('/terminal')
-        
+
       it "should get whatever the file exports", ->
         assert latestRequire('/terminal').something
-      
+
       it "should not get something the file doesn't export", ->
         assert !latestRequire('/terminal').something2
 
@@ -34,6 +34,15 @@ Testing out this crazy require thing
         assert.throws ->
           latestRequire "/does_not_exist"
         , /Could not find file/i
+
+      it "should recover gracefully enough from requiring files that throw errors", ->
+        assert.throws ->
+          latestRequire "/throws"
+
+        assert.throws ->
+          latestRequire "/throws"
+        , (err) ->
+          !/circular/i.test err
 
     describe "module context", ->
       it "should know __dirname", ->
