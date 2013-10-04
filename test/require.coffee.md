@@ -9,20 +9,17 @@ Testing out this crazy require thing
         assert !global.require
 
       it "should be able to require a file that exists with a relative path", ->
-        assert latestRequire('/terminal')
+        assert latestRequire('/samples/terminal')
 
       it "should get whatever the file exports", ->
-        assert latestRequire('/terminal').something
+        assert latestRequire('/samples/terminal').something
 
       it "should not get something the file doesn't export", ->
-        assert !latestRequire('/terminal').something2
-
-      it "should be able to require from the root path within a package", ->
-        assert latestRequire('/main')
+        assert !latestRequire('/samples/terminal').something2
 
       it "should throw a descriptive error when requring circular dependencies", ->
         assert.throws ->
-          latestRequire('/circular')
+          latestRequire('/samples/circular')
         , /circular/i
 
       it "should throw a descriptive error when requiring a package that doesn't exist", ->
@@ -37,19 +34,24 @@ Testing out this crazy require thing
 
       it "should recover gracefully enough from requiring files that throw errors", ->
         assert.throws ->
-          latestRequire "/throws"
+          latestRequire "/samples/throws"
 
         assert.throws ->
-          latestRequire "/throws"
+          latestRequire "/samples/throws"
         , (err) ->
           !/circular/i.test err
+
+      it "should cache modules", ->
+        result = require("/samples/random")
+
+        assert.equal require("/samples/random"), result
 
     describe "module context", ->
       it "should know __dirname", ->
         assert.equal "test", __dirname
 
       it "should know __filename", ->
-        assert.equal "test/require", __filename
+        assert __filename
 
       it "should know its package", ->
         assert PACKAGE

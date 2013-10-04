@@ -100,14 +100,14 @@ module. An application is composed of packages.
 
       normalizedPath = normalizePath(path, localPath)
 
-      cache = (pkg.cache ||= {})
+      cache = cacheFor(pkg)
 
       if module = cache[normalizedPath]
         if module is circularGuard
           throw "Circular dependency detected when requiring #{normalizedPath}"
       else
         cache[normalizedPath] = circularGuard
-        
+
         try
           cache[normalizedPath] = module = loadModule(pkg, normalizedPath)
         finally
@@ -246,3 +246,13 @@ Helpers
 
     startsWith = (string, prefix) ->
       string.lastIndexOf(prefix, 0) is 0
+
+Creates a cache for modules within a package.
+
+    cacheFor = (pkg) ->
+      return pkg.cache if pkg.cache
+
+      Object.defineProperty pkg, "cache",
+        value: {}
+
+      return pkg.cache
