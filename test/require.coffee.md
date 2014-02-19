@@ -4,6 +4,10 @@ Testing out this crazy require thing
     # NOTE: This causes the root for relative requires to be at the root dir, not the test dir
     latestRequire = require('/main').generateFor(PACKAGE)
 
+    describe "PACKAGE", ->
+      it "should be named 'ROOT'", ->
+        assert.equal PACKAGE.name, "ROOT"
+
     describe "require", ->
       it "should not exist globally", ->
         assert !global.require
@@ -60,7 +64,7 @@ Testing out this crazy require thing
       PACKAGE.dependencies["test-package"] =
         distribution:
           main:
-            content: ""
+            content: "module.exports = PACKAGE.name"
 
       PACKAGE.dependencies["strange/name"] =
         distribution:
@@ -75,6 +79,9 @@ Testing out this crazy require thing
 
       it "should be able to require a package that exists", ->
         assert latestRequire("test-package")
+
+      it "Dependent packages should know their names when required", ->
+        assert.equal latestRequire("test-package"), "test-package"
 
       it "should be able to require by pretty much any name", ->
         assert latestRequire("strange/name")

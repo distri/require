@@ -197,6 +197,8 @@ Loading a module within our package, uses the requiring module as a parent for
 local path resolution.
 
     generateRequireFn = (pkg, module=rootModule) ->
+      pkg.name ?= "ROOT"
+
       (path) ->
         if isPackage(path)
           unless otherPackage = pkg.dependencies[path]
