@@ -19,7 +19,7 @@ A module is a file.
 
 ### Package
 
-A package is an aggregation of modules. A package is a json object with the 
+A package is an aggregation of modules. A package is a json object with the
 following properties:
 
 - `distribution` An object whose keys are paths and properties are `fileData`
@@ -31,7 +31,7 @@ It may have additional properties such as `source`, `repository`, and `docs`.
 ### Application
 
 An application is a package which has an `entryPoint` and may have dependencies.
-Additionally an application's dependencies may have dependencies. Dependencies 
+Additionally an application's dependencies may have dependencies. Dependencies
 must be bundled with the package.
 
 Uses
@@ -60,14 +60,6 @@ The dependency will be delcared something like
 
 >     dependencies:
 >       console: "http://strd6.github.io/console/v1.2.2.json"
-
-You may also require specific module from within another package.
-
-WARNING: This usage oversteps encapsulation and may be excessively brittle.
-
-TODO: Maybe this shouldn't be allowed.
-
->     require "console/extras"
 
 Implementation
 --------------
@@ -139,12 +131,10 @@ Chew up all the pieces into a standardized path.
 
       return result.join(fileSeparator)
 
-`loadPackage` Loads a module from a package, optionally specifying a path. If a
-path is given the module at that path is loaded, otherwise the `entryPoint`
-specified in the package is loaded.
+`loadPackage` Loads a dependent package at that packages entry point.
 
-    loadPackage = (parentModule, pkg, path) ->
-      path ||= (pkg.entryPoint || defaultEntryPoint)
+    loadPackage = (parentModule, pkg) ->
+      path = pkg.entryPoint or defaultEntryPoint
 
       loadPath(parentModule, pkg, path)
 
@@ -208,15 +198,13 @@ local path resolution.
 
     generateRequireFn = (pkg, module=rootModule) ->
       (path) ->
-        if otherPackageName = isPackage(path)
-          packagePath = path.replace(otherPackageName, "")
+        if isPackage(path)
+          unless otherPackage = pkg.dependencies[path]
+            throw "Package: #{path} not found."
 
-          unless otherPackage = pkg.dependencies[otherPackageName]
-            throw "Package: #{otherPackageName} not found."
+          otherPackage.name ?= path
 
-          otherPackage.name ?= otherPackageName
-
-          loadPackage(rootModule, otherPackage, packagePath)
+          loadPackage(rootModule, otherPackage)
         else
           loadPath(module, pkg, path)
 
@@ -234,7 +222,7 @@ Notes
 
 We have to use `pkg` as a variable name because `package` is a reserved word.
 
-Node needs to check file extensions, but because we only load compiled products 
+Node needs to check file extensions, but because we only load compiled products
 we never have extensions in our path.
 
 So while Node may need to check for either `path/somefile.js` or `path/somefile.coffee`

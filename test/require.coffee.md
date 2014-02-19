@@ -55,3 +55,26 @@ Testing out this crazy require thing
 
       it "should know its package", ->
         assert PACKAGE
+
+    describe "dependent packages", ->
+      PACKAGE.dependencies["test-package"] =
+        distribution:
+          main:
+            content: ""
+
+      PACKAGE.dependencies["strange/name"] =
+        distribution:
+          main:
+            content: ""
+
+      it "should raise an error when requiring a package that doesn't exist", ->
+        assert.throws ->
+          latestRequire "nonexistent"
+        , (err) ->
+          /nonexistent/i.test err
+
+      it "should be able to require a package that exists", ->
+        assert latestRequire("test-package")
+
+      it "should be able to require by pretty much any name", ->
+        assert latestRequire("strange/name")
