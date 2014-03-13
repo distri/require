@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>test/require</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="http://strd6.github.io/cdn/parallel/docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    <ul class="sections">
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <p>Testing out this crazy require thing</p>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript"><span class="comment"># Load our latest require code for testing</span>
+<span class="comment"># NOTE: This causes the root for relative requires to be at the root dir, not the test dir</span>
+latestRequire = require(<span class="string">'/main'</span>).generateFor(PACKAGE)
+
+describe <span class="string">"PACKAGE"</span>, -&gt;
+  it <span class="string">"should be named 'ROOT'"</span>, -&gt;
+    assert.equal PACKAGE.name, <span class="string">"ROOT"</span>
+
+describe <span class="string">"require"</span>, -&gt;
+  it <span class="string">"should not exist globally"</span>, -&gt;
+    assert !global.require
+
+  it <span class="string">"should be able to require a file that exists with a relative path"</span>, -&gt;
+    assert latestRequire(<span class="string">'/samples/terminal'</span>)
+
+  it <span class="string">"should get whatever the file exports"</span>, -&gt;
+    assert latestRequire(<span class="string">'/samples/terminal'</span>).something
+
+  it <span class="string">"should not get something the file doesn't export"</span>, -&gt;
+    assert !latestRequire(<span class="string">'/samples/terminal'</span>).something2
+
+  it <span class="string">"should throw a descriptive error when requring circular dependencies"</span>, -&gt;
+    assert.throws -&gt;
+      latestRequire(<span class="string">'/samples/circular'</span>)
+    , <span class="regexp">/circular/i</span>
+
+  it <span class="string">"should throw a descriptive error when requiring a package that doesn't exist"</span>, -&gt;
+    assert.throws -&gt;
+      latestRequire <span class="string">"does_not_exist"</span>
+    , <span class="regexp">/not found/i</span>
+
+  it <span class="string">"should throw a descriptive error when requiring a relative path that doesn't exist"</span>, -&gt;
+    assert.throws -&gt;
+      latestRequire <span class="string">"/does_not_exist"</span>
+    , <span class="regexp">/Could not find file/i</span>
+
+  it <span class="string">"should recover gracefully enough from requiring files that throw errors"</span>, -&gt;
+    assert.throws -&gt;
+      latestRequire <span class="string">"/samples/throws"</span>
+
+    assert.throws -&gt;
+      latestRequire <span class="string">"/samples/throws"</span>
+    , (err) -&gt;
+      !<span class="regexp">/circular/i</span>.test err
+
+  it <span class="string">"should cache modules"</span>, -&gt;
+    result = require(<span class="string">"/samples/random"</span>)
+
+    assert.equal require(<span class="string">"/samples/random"</span>), result
+
+describe <span class="string">"module context"</span>, -&gt;
+  it <span class="string">"should know __dirname"</span>, -&gt;
+    assert.equal <span class="string">"test"</span>, __dirname
+
+  it <span class="string">"should know __filename"</span>, -&gt;
+    assert __filename
+
+  it <span class="string">"should know its package"</span>, -&gt;
+    assert PACKAGE
+
+describe <span class="string">"dependent packages"</span>, -&gt;
+  PACKAGE.dependencies[<span class="string">"test-package"</span>] =
+    distribution:
+      main:
+        content: <span class="string">"module.exports = PACKAGE.name"</span>
+
+  PACKAGE.dependencies[<span class="string">"strange/name"</span>] =
+    distribution:
+      main:
+        content: <span class="string">""</span>
+
+  it <span class="string">"should raise an error when requiring a package that doesn't exist"</span>, -&gt;
+    assert.throws -&gt;
+      latestRequire <span class="string">"nonexistent"</span>
+    , (err) -&gt;
+      <span class="regexp">/nonexistent/i</span>.test err
+
+  it <span class="string">"should be able to require a package that exists"</span>, -&gt;
+    assert latestRequire(<span class="string">"test-package"</span>)
+
+  it <span class="string">"Dependent packages should know their names when required"</span>, -&gt;
+    assert.equal latestRequire(<span class="string">"test-package"</span>), <span class="string">"test-package"</span>
+
+  it <span class="string">"should be able to require by pretty much any name"</span>, -&gt;
+    assert latestRequire(<span class="string">"strange/name"</span>)</code></pre>
+</div>
+        </li>
+        
+    </ul>
+  </div>
+  <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/coffee-script/1.6.3/coffee-script.min.js"></script>
+<script src="http://www.danielx.net/require/v0.2.2.js"></script><script>
+  $.ajax({
+    url: "http://strd6.github.io/interactive/v0.8.1.jsonp",
+    dataType: "jsonp",
+    jsonpCallback: "STRd6/interactive:v0.8.1",
+    cache: true
+  }).then(function(PACKAGE) {
+    Require.generateFor(PACKAGE)("./" + PACKAGE.entryPoint)
+  })
+</script><script src="../package.js"></script>
+</body>
+</html>
