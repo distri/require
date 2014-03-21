@@ -10,30 +10,6 @@ maintains encapsulation because it is impossible from within a module to know
 what external name would be correct to prevent errors of composition in all
 possible uses.
 
-Definitions
------------
-
-### Module
-
-A module is a file.
-
-### Package
-
-A package is an aggregation of modules. A package is a json object with the
-following properties:
-
-- `distribution` An object whose keys are paths and properties are `fileData`
-- `entryPoint` Path to the primary module that requiring this package will require.
-- `dependencies` An object whose keys are names and whose values are packages.
-
-It may have additional properties such as `source`, `repository`, and `docs`.
-
-### Application
-
-An application is a package which has an `entryPoint` and may have dependencies.
-Additionally an application's dependencies may have dependencies. Dependencies
-must be bundled with the package.
-
 Uses
 ----
 
@@ -250,3 +226,27 @@ the cache doesn't end up being enumerated or serialized to json.
         value: {}
 
       return pkg.cache
+
+Definitions
+-----------
+
+### Module
+
+A module is a file.
+
+### Package
+
+A package is an aggregation of modules. A package is a json object with the
+following properties:
+
+- `distribution` An object whose keys are paths and properties are `fileData`
+- `entryPoint` Path to the primary module that requiring this package will require.
+- `dependencies` An object whose keys are names and whose values are packages.
+
+It may have additional properties such as `source`, `repository`, and `docs`.
+
+### Application
+
+An application is a package which has an `entryPoint` and may have dependencies.
+Additionally an application's dependencies may have dependencies. Dependencies
+must be bundled with the package.
