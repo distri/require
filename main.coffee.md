@@ -109,10 +109,10 @@ Chew up all the pieces into a standardized path.
 
 `loadPackage` Loads a dependent package at that packages entry point.
 
-    loadPackage = (parentModule, pkg) ->
+    loadPackage = (pkg) ->
       path = pkg.entryPoint or defaultEntryPoint
 
-      loadPath(parentModule, pkg, path)
+      loadPath(rootModule, pkg, path)
 
 Load a file from within a package.
 
@@ -120,7 +120,7 @@ Load a file from within a package.
       unless (file = pkg.distribution[path])
         throw "Could not find file at #{path} in #{pkg.name}"
 
-      program = file.content
+      program = annotateSourceURL file.content, pkg, path
       dirname = path.split(fileSeparator)[0...-1].join(fileSeparator)
 
       module =
@@ -174,6 +174,7 @@ local path resolution.
 
     generateRequireFn = (pkg, module=rootModule) ->
       pkg.name ?= "ROOT"
+      pkg.scopedName ?= "ROOT"
 
       (path) ->
         if isPackage(path)
@@ -181,8 +182,9 @@ local path resolution.
             throw "Package: #{path} not found."
 
           otherPackage.name ?= path
+          otherPackage.scopedName ?= "#{pkg.scopedName}:#{path}"
 
-          loadPackage(rootModule, otherPackage)
+          loadPackage(otherPackage)
         else
           loadPath(module, pkg, path)
 
@@ -226,6 +228,14 @@ the cache doesn't end up being enumerated or serialized to json.
         value: {}
 
       return pkg.cache
+
+Annotate a program with a source url so we can debug in Chrome's dev tools.
+
+    annotateSourceURL = (program, pkg, path) ->
+      """
+        #{program}
+        //# sourceURL=#{pkg.scopedName}/#{path}
+      """
 
 Definitions
 -----------
