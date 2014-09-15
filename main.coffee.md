@@ -120,7 +120,10 @@ Load a file from within a package.
       unless (file = pkg.distribution[path])
         throw "Could not find file at #{path} in #{pkg.name}"
 
-      program = annotateSourceURL file.content, pkg, path
+      unless (content = file.content)?
+        throw "Malformed package. No content for file at #{path} in #{pkg.name}"
+
+      program = annotateSourceURL content, pkg, path
       dirname = path.split(fileSeparator)[0...-1].join(fileSeparator)
 
       module =

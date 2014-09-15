@@ -60,6 +60,19 @@ Testing out this crazy require thing
       it "should know its package", ->
         assert PACKAGE
 
+    describe "malformed package", ->
+      malformedPackage =
+        distribution:
+          yolo: "No content!"
+
+      it "should throw an error when attempting to require a malformed file in a package distribution", ->
+        r = require('/main').generateFor(malformedPackage)
+
+        assert.throws ->
+          r.require "yolo"
+        , (err) ->
+          !/malformed/i.test err
+
     describe "dependent packages", ->
       PACKAGE.dependencies["test-package"] =
         distribution:
