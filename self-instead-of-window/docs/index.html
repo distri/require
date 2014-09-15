@@ -252,7 +252,10 @@ contain an references to current or parent directories.</p>
   <span class="keyword">unless</span> (file = pkg.distribution[path])
     <span class="keyword">throw</span> <span class="string">"Could not find file at <span class="subst">#{path}</span> in <span class="subst">#{pkg.name}</span>"</span>
 
-  program = annotateSourceURL file.content, pkg, path
+  <span class="keyword">unless</span> (content = file.content)?
+    <span class="keyword">throw</span> <span class="string">"Malformed package. No content for file at <span class="subst">#{path}</span> in <span class="subst">#{pkg.name}</span>"</span>
+
+  program = annotateSourceURL content, pkg, path
   dirname = path.split(fileSeparator)[<span class="number">0.</span>..-<span class="number">1</span>].join(fileSeparator)
 
   module =
