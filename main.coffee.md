@@ -44,9 +44,9 @@ File separator is '/'
 
     fileSeparator = '/'
 
-In the browser `global` is `window`.
+In the browser `global` is `self`.
 
-    global = window
+    global = self
 
 Default entry point
 
