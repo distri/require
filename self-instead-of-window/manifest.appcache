@@ -1,0 +1,12 @@
+CACHE MANIFEST
+# 1410741540882
+
+CACHE:
+index.html
+../self-instead-of-window.json.js
+
+
+NETWORK:
+https://*
+http://*
+*
