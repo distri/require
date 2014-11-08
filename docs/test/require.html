@@ -81,6 +81,19 @@ describe <span class="string">"module context"</span>, -&gt;
   it <span class="string">"should know its package"</span>, -&gt;
     assert PACKAGE
 
+describe <span class="string">"malformed package"</span>, -&gt;
+  malformedPackage =
+    distribution:
+      yolo: <span class="string">"No content!"</span>
+
+  it <span class="string">"should throw an error when attempting to require a malformed file in a package distribution"</span>, -&gt;
+    r = require(<span class="string">'/main'</span>).generateFor(malformedPackage)
+
+    assert.throws -&gt;
+      r.require <span class="string">"yolo"</span>
+    , (err) -&gt;
+      !<span class="regexp">/malformed/i</span>.test err
+
 describe <span class="string">"dependent packages"</span>, -&gt;
   PACKAGE.dependencies[<span class="string">"test-package"</span>] =
     distribution:
@@ -233,23 +246,19 @@ describe <span class="string">"dependent packages"</span>, -&gt;
     }, 0);
   };
 
-  Interactive.register("setup", function(params) {
-    params.code = CoffeeScript.compile(params.source);
-    return exec(params);
-  });
-
-  Interactive.register("setup-js", function(params) {
-    params.code = params.source;
-    return exec(params);
-  });
-
   $(function() {
-    return findInteractiveElements();
+    Interactive.register("setup", function(params) {
+      params.code = CoffeeScript.compile(params.source);
+      return exec(params);
+    });
+    return Interactive.register("setup-js", function(params) {
+      params.code = params.source;
+      return exec(params);
+    });
   });
 
 }).call(this);
 
-//# sourceURL=interactive.coffee
 </script><script src="../package.js"></script>
 </body>
 </html>
