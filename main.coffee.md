@@ -180,7 +180,9 @@ local path resolution.
       pkg.scopedName ?= "ROOT"
 
       (path) ->
-        if isPackage(path)
+        if typeof path is "object"
+          loadPackage(path)
+        else if isPackage(path)
           unless otherPackage = pkg.dependencies[path]
             throw "Package: #{path} not found."
 

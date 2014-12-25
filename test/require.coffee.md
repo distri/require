@@ -46,9 +46,22 @@ Testing out this crazy require thing
           !/circular/i.test err
 
       it "should cache modules", ->
-        result = require("/samples/random")
+        result = latestRequire("/samples/random")
 
-        assert.equal require("/samples/random"), result
+        assert.equal latestRequire("/samples/random"), result
+
+      it "should be able to require a JSON package object", ->
+        SAMPLE_PACKAGE =
+          entryPoint: "main"
+          distribution:
+            main:
+              content: "module.exports = require('./other')"
+            other:
+              content: "module.exports = 'TEST'"
+
+        result = latestRequire SAMPLE_PACKAGE
+
+        assert.equal "TEST", result
 
     describe "module context", ->
       it "should know __dirname", ->
