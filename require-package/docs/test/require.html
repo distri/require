@@ -23,7 +23,7 @@
             </div>
             <div class="content"><pre><code class="lang-coffeescript"><span class="comment"># Load our latest require code for testing</span>
 <span class="comment"># NOTE: This causes the root for relative requires to be at the root dir, not the test dir</span>
-latestRequire = require(<span class="string">'/main'</span>).generateFor(PACKAGE)
+latestRequire = require(<span class="string">'/main'</span>)(PACKAGE)
 
 describe <span class="string">"PACKAGE"</span>, -&gt;
   it <span class="string">"should be named 'ROOT'"</span>, -&gt;
@@ -100,7 +100,7 @@ describe <span class="string">"malformed package"</span>, -&gt;
       yolo: <span class="string">"No content!"</span>
 
   it <span class="string">"should throw an error when attempting to require a malformed file in a package distribution"</span>, -&gt;
-    r = require(<span class="string">'/main'</span>).generateFor(malformedPackage)
+    r = require(<span class="string">'/main'</span>)(malformedPackage)
 
     assert.throws -&gt;
       r.require <span class="string">"yolo"</span>

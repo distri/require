@@ -370,10 +370,9 @@ differently.</p>
 
             </div>
             <div class="content"><pre><code class="lang-coffeescript"><span class="keyword">if</span> exports?
-  exports.generateFor = generateRequireFn
+  module.exports = generateRequireFn
 <span class="keyword">else</span>
-  global.Require =
-    generateFor: generateRequireFn</code></pre>
+  global.Require = generateRequireFn</code></pre>
 </div>
         </li>
         
