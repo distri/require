@@ -197,10 +197,9 @@ Because we can't actually `require('require')` we need to export it a little
 differently.
 
     if exports?
-      exports.generateFor = generateRequireFn
+      module.exports = generateRequireFn
     else
-      global.Require =
-        generateFor: generateRequireFn
+      global.Require = generateRequireFn
 
 Notes
 -----
