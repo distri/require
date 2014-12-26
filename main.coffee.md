@@ -24,7 +24,7 @@ Require a module in the parent directory
 Require a module from the root directory in the same package.
 
 NOTE: This could behave slightly differently under Node.js if your package does
-not have it's own jailed filesystem.
+not have it's own isolated filesystem.
 
 >     require "/silence"
 
@@ -32,10 +32,16 @@ From a module within a package, require a dependent package.
 
 >     require "console"
 
-The dependency will be delcared something like
+The dependency could be delcared in pixie.cson as follows:
 
 >     dependencies:
 >       console: "http://strd6.github.io/console/v1.2.2.json"
+
+You can require a package directly from its JSON representation as well.
+
+>     $.getJSON(packageURL)
+>     .then (pkg) ->
+>       require pkg
 
 Implementation
 --------------
@@ -180,7 +186,9 @@ local path resolution.
       pkg.scopedName ?= "ROOT"
 
       (path) ->
-        if isPackage(path)
+        if typeof path is "object"
+          loadPackage(path)
+        else if isPackage(path)
           unless otherPackage = pkg.dependencies[path]
             throw "Package: #{path} not found."
 
@@ -194,11 +202,32 @@ local path resolution.
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
+    publicAPI =
+      generateFor: generateRequireFn
+
+Wrap a package as a string that will bootstrap `require` and execute the package.
+This can be used for generating standalone HTML pages, scripts, and tests.
+
+      packageWrapper: (pkg, code) ->
+        """
+          ;(function(PACKAGE) {
+            var oldRequire = self.Require;
+            #{PACKAGE.distribution.main.content}
+            var require = Require.generateFor(PACKAGE);
+            #{code};
+            self.Require = oldRequire;
+          })(#{JSON.stringify(pkg, null, 2)});
+        """
+
+Wrap a package as a string that will execute its entry point.
+
+      executePackageWrapper: (pkg) ->
+        publicAPI.packageWrapper pkg, "require('./#{pkg.entryPoint}')"
+
     if exports?
-      exports.generateFor = generateRequireFn
+      module.exports = publicAPI
     else
-      global.Require =
-        generateFor: generateRequireFn
+      global.Require = publicAPI
 
 Notes
 -----
