@@ -390,11 +390,11 @@ differently.</p>
 This can be used for generating standalone HTML pages, scripts, and tests.</p>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript">  packageWrapper: (pkg, REQUIRE_SOURCE, code) -&gt;
+            <div class="content"><pre><code class="lang-coffeescript">  packageWrapper: (pkg, code) -&gt;
     <span class="string">"""
       ;(function(PACKAGE) {
         var oldRequire = self.Require;
-        <span class="subst">#{REQUIRE_SOURCE}</span>
+        <span class="subst">#{PACKAGE.distribution.main.content}</span>
         var require = Require.generateFor(PACKAGE);
         <span class="subst">#{code}</span>;
         self.Require = oldRequire;
@@ -413,7 +413,7 @@ This can be used for generating standalone HTML pages, scripts, and tests.</p>
 
             </div>
             <div class="content"><pre><code class="lang-coffeescript">  executePackageWrapper: (pkg) -&gt;
-    publicAPI.packageWrapper pkg, PACKAGE.distribution.main.content, <span class="string">"require('./<span class="subst">#{pkg.entryPoint}</span>')"</span>
+    publicAPI.packageWrapper pkg, <span class="string">"require('./<span class="subst">#{pkg.entryPoint}</span>')"</span>
 
 <span class="keyword">if</span> exports?
   module.exports = publicAPI
