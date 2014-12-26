@@ -2,7 +2,7 @@ Testing out this crazy require thing
 
     # Load our latest require code for testing
     # NOTE: This causes the root for relative requires to be at the root dir, not the test dir
-    latestRequire = require('/main')(PACKAGE)
+    latestRequire = require('/main').generateFor(PACKAGE)
 
     describe "PACKAGE", ->
       it "should be named 'ROOT'", ->
@@ -63,6 +63,10 @@ Testing out this crazy require thing
 
         assert.equal "TEST", result
 
+    describe "package wrapper", ->
+      it "should be able to generate a package wrapper", ->
+        assert require('/main').executePackageWrapper(PACKAGE)
+
     describe "module context", ->
       it "should know __dirname", ->
         assert.equal "test", __dirname
@@ -79,7 +83,7 @@ Testing out this crazy require thing
           yolo: "No content!"
 
       it "should throw an error when attempting to require a malformed file in a package distribution", ->
-        r = require('/main')(malformedPackage)
+        r = require('/main').generateFor(malformedPackage)
 
         assert.throws ->
           r.require "yolo"
