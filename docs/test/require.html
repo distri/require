@@ -67,9 +67,29 @@ describe <span class="string">"require"</span>, -&gt;
       !<span class="regexp">/circular/i</span>.test err
 
   it <span class="string">"should cache modules"</span>, -&gt;
-    result = require(<span class="string">"/samples/random"</span>)
+    result = latestRequire(<span class="string">"/samples/random"</span>)
 
-    assert.equal require(<span class="string">"/samples/random"</span>), result
+    assert.equal latestRequire(<span class="string">"/samples/random"</span>), result
+
+  it <span class="string">"should be able to require a JSON package object"</span>, -&gt;
+    SAMPLE_PACKAGE =
+      entryPoint: <span class="string">"main"</span>
+      distribution:
+        main:
+          content: <span class="string">"module.exports = require('./other')"</span>
+        other:
+          content: <span class="string">"module.exports = 'TEST'"</span>
+
+    result = latestRequire SAMPLE_PACKAGE
+
+    assert.equal <span class="string">"TEST"</span>, result
+
+describe <span class="string">"package wrapper"</span>, -&gt;
+  it <span class="string">"should be able to generate a package wrapper"</span>, -&gt;
+    assert require(<span class="string">'/main'</span>).executePackageWrapper(PACKAGE)
+
+  it <span class="string">"should be able to execute code in the package context"</span>, -&gt;
+    assert require(<span class="string">'/main'</span>).packageWrapper(PACKAGE, <span class="string">"my_codezz"</span>)
 
 describe <span class="string">"module context"</span>, -&gt;
   it <span class="string">"should know __dirname"</span>, -&gt;
