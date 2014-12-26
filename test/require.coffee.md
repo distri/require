@@ -67,6 +67,9 @@ Testing out this crazy require thing
       it "should be able to generate a package wrapper", ->
         assert require('/main').executePackageWrapper(PACKAGE)
 
+      it "should be able to execute code in the package context", ->
+        assert require('/main').packageWrapper(PACKAGE, "my_codezz")
+
     describe "module context", ->
       it "should know __dirname", ->
         assert.equal "test", __dirname

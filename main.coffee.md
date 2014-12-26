@@ -208,11 +208,11 @@ differently.
 Wrap a package as a string that will bootstrap `require` and execute the package.
 This can be used for generating standalone HTML pages, scripts, and tests.
 
-      packageWrapper: (pkg, REQUIRE_SOURCE, code) ->
+      packageWrapper: (pkg, code) ->
         """
           ;(function(PACKAGE) {
             var oldRequire = self.Require;
-            #{REQUIRE_SOURCE}
+            #{PACKAGE.distribution.main.content}
             var require = Require.generateFor(PACKAGE);
             #{code};
             self.Require = oldRequire;
@@ -222,7 +222,7 @@ This can be used for generating standalone HTML pages, scripts, and tests.
 Wrap a package as a string that will execute its entry point.
 
       executePackageWrapper: (pkg) ->
-        publicAPI.packageWrapper pkg, PACKAGE.distribution.main.content, "require('./#{pkg.entryPoint}')"
+        publicAPI.packageWrapper pkg, "require('./#{pkg.entryPoint}')"
 
     if exports?
       module.exports = publicAPI
