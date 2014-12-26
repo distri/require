@@ -63,7 +63,7 @@ possible uses.</p>
 </blockquote>
 <p>Require a module from the root directory in the same package.</p>
 <p>NOTE: This could behave slightly differently under Node.js if your package does
-not have it&#39;s own jailed filesystem.</p>
+not have it&#39;s own isolated filesystem.</p>
 <blockquote>
 <pre><code>require &quot;/silence&quot;</code></pre>
 </blockquote>
@@ -71,10 +71,16 @@ not have it&#39;s own jailed filesystem.</p>
 <blockquote>
 <pre><code>require &quot;console&quot;</code></pre>
 </blockquote>
-<p>The dependency will be delcared something like</p>
+<p>The dependency could be delcared in pixie.cson as follows:</p>
 <blockquote>
 <pre><code>dependencies:
   console: &quot;http://strd6.github.io/console/v1.2.2.json&quot;</code></pre>
+</blockquote>
+<p>You can require a package directly from its JSON representation as well.</p>
+<blockquote>
+<pre><code>$.getJSON(packageURL)
+.then (pkg) -&gt;
+  require pkg</code></pre>
 </blockquote>
 <h2 id="implementation">Implementation</h2>
 
@@ -369,10 +375,8 @@ local path resolution.</p>
 differently.</p>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript"><span class="keyword">if</span> exports?
-  module.exports = generateRequireFn
-<span class="keyword">else</span>
-  global.Require = generateRequireFn</code></pre>
+            <div class="content"><pre><code class="lang-coffeescript">publicAPI =
+  generateFor: generateRequireFn</code></pre>
 </div>
         </li>
         
@@ -381,6 +385,48 @@ differently.</p>
             <div class="annotation">
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Wrap a package as a string that will bootstrap <code>require</code> and execute the package.
+This can be used for generating standalone HTML pages, scripts, and tests.</p>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript">  packageWrapper: (pkg, REQUIRE_SOURCE, code) -&gt;
+    <span class="string">"""
+      ;(function(PACKAGE) {
+        var oldRequire = self.Require;
+        <span class="subst">#{REQUIRE_SOURCE}</span>
+        var require = Require.generateFor(PACKAGE);
+        <span class="subst">#{code}</span>;
+        self.Require = oldRequire;
+      })(<span class="subst">#{JSON.stringify(pkg, <span class="literal">null</span>, <span class="number">2</span>)}</span>);
+    """</span></code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>Wrap a package as a string that will execute its entry point.</p>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript">  executePackageWrapper: (pkg) -&gt;
+    publicAPI.packageWrapper pkg, PACKAGE.distribution.main.content, <span class="string">"require('./<span class="subst">#{pkg.entryPoint}</span>')"</span>
+
+<span class="keyword">if</span> exports?
+  module.exports = publicAPI
+<span class="keyword">else</span>
+  global.Require = publicAPI</code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <h2 id="notes">Notes</h2>
 
@@ -391,10 +437,10 @@ differently.</p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-22">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>We have to use <code>pkg</code> as a variable name because <code>package</code> is a reserved word.</p>
 <p>Node needs to check file extensions, but because we only load compiled products
@@ -411,10 +457,10 @@ that will already have been resolved for us and we will only check <code>path/so
         </li>
         
         
-        <li id="section-21">
+        <li id="section-23">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p>Detect if a string starts with a given prefix.</p>
 
@@ -425,10 +471,10 @@ that will already have been resolved for us and we will only check <code>path/so
         </li>
         
         
-        <li id="section-22">
+        <li id="section-24">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p>Creates a cache for modules within a package. It uses <code>defineProperty</code> so that
 the cache doesn&#39;t end up being enumerated or serialized to json.</p>
@@ -445,10 +491,10 @@ the cache doesn&#39;t end up being enumerated or serialized to json.</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-25">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>Annotate a program with a source url so we can debug in Chrome&#39;s dev tools.</p>
 
@@ -462,10 +508,10 @@ the cache doesn&#39;t end up being enumerated or serialized to json.</p>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-26">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <h2 id="definitions">Definitions</h2>
 
@@ -476,10 +522,10 @@ the cache doesn&#39;t end up being enumerated or serialized to json.</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-27">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <h3 id="module">Module</h3>
 <p>A module is a file.</p>
