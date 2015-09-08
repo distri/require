@@ -62,6 +62,9 @@ Testing out this crazy require thing
         result = latestRequire SAMPLE_PACKAGE
 
         assert.equal "TEST", result
+      
+      it "should be able to require something packaged with browserify", ->
+        assert.equal latestRequire("/samples/browserified"), "coolio"
 
     describe "package wrapper", ->
       it "should be able to generate a package wrapper", ->
