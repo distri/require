@@ -1,0 +1,12 @@
+CACHE MANIFEST
+# 1441735189115
+
+CACHE:
+index.html
+../browserify-compat.json.js
+
+
+NETWORK:
+https://*
+http://*
+*
