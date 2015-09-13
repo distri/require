@@ -224,6 +224,10 @@ Wrap a package as a string that will execute its entry point.
       executePackageWrapper: (pkg) ->
         publicAPI.packageWrapper pkg, "require('./#{pkg.entryPoint}')"
 
+Require a package directly.
+
+      require: loadPackage
+
     if exports?
       module.exports = publicAPI
     else

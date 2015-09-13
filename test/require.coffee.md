@@ -70,6 +70,10 @@ Testing out this crazy require thing
       it "should be able to execute code in the package context", ->
         assert require('/main').packageWrapper(PACKAGE, "my_codezz")
 
+    describe "public API", ->
+      it "should be able to require a JSON package directly", ->
+        assert require('/main').require(PACKAGE).require
+
     describe "module context", ->
       it "should know __dirname", ->
         assert.equal "test", __dirname
