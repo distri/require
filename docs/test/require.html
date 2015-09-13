@@ -91,6 +91,10 @@ describe <span class="string">"package wrapper"</span>, -&gt;
   it <span class="string">"should be able to execute code in the package context"</span>, -&gt;
     assert require(<span class="string">'/main'</span>).packageWrapper(PACKAGE, <span class="string">"my_codezz"</span>)
 
+describe <span class="string">"public API"</span>, -&gt;
+  it <span class="string">"should be able to require a JSON package directly"</span>, -&gt;
+    assert require(<span class="string">'/main'</span>).require(PACKAGE).require
+
 describe <span class="string">"module context"</span>, -&gt;
   it <span class="string">"should know __dirname"</span>, -&gt;
     assert.equal <span class="string">"test"</span>, __dirname
