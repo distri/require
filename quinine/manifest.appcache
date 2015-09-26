@@ -1,0 +1,12 @@
+CACHE MANIFEST
+# 1443298092885
+
+CACHE:
+index.html
+../quinine.json.js
+
+
+NETWORK:
+https://*
+http://*
+*
