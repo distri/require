@@ -349,7 +349,7 @@ local path resolution.</p>
   pkg.name ?= <span class="string">"ROOT"</span>
   pkg.scopedName ?= <span class="string">"ROOT"</span>
 
-  (path) -&gt;
+  <span class="function"><span class="title">fn</span></span> = (path) -&gt;
     <span class="keyword">if</span> <span class="keyword">typeof</span> path <span class="keyword">is</span> <span class="string">"object"</span>
       loadPackage(path)
     <span class="keyword">else</span> <span class="keyword">if</span> isPackage(path)
@@ -361,7 +361,12 @@ local path resolution.</p>
 
       loadPackage(otherPackage)
     <span class="keyword">else</span>
-      loadPath(module, pkg, path)</code></pre>
+      loadPath(module, pkg, path)
+
+  fn.packageWrapper = publicAPI.packageWrapper
+  fn.executePackageWrapper = publicAPI.executePackageWrapper
+
+  <span class="keyword">return</span> fn</code></pre>
 </div>
         </li>
         
@@ -393,11 +398,10 @@ This can be used for generating standalone HTML pages, scripts, and tests.</p>
             <div class="content"><pre><code class="lang-coffeescript">  packageWrapper: (pkg, code) -&gt;
     <span class="string">"""
       ;(function(PACKAGE) {
-        var oldRequire = self.Require;
-        <span class="subst">#{PACKAGE.distribution.main.content}</span>
+        var src = <span class="subst">#{JSON.stringify(PACKAGE.distribution.main.content)}</span>;
+        var Require = new Function("PACKAGE", "return " + src)({distribution: {main: {content: src}}});
         var require = Require.generateFor(PACKAGE);
         <span class="subst">#{code}</span>;
-        self.Require = oldRequire;
       })(<span class="subst">#{JSON.stringify(pkg, <span class="literal">null</span>, <span class="number">2</span>)}</span>);
     """</span></code></pre>
 </div>
@@ -426,7 +430,7 @@ This can be used for generating standalone HTML pages, scripts, and tests.</p>
               <p>Require a package directly.</p>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript">  require: loadPackage
+            <div class="content"><pre><code class="lang-coffeescript">  loadPackage: loadPackage
 
 <span class="keyword">if</span> exports?
   module.exports = publicAPI
@@ -526,6 +530,19 @@ the cache doesn&#39;t end up being enumerated or serialized to json.</p>
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
+              <p>Return value for inserting into function for embedded windows.</p>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript"><span class="keyword">return</span> publicAPI</code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
               <h2 id="definitions">Definitions</h2>
 
             </div>
@@ -535,10 +552,10 @@ the cache doesn&#39;t end up being enumerated or serialized to json.</p>
         </li>
         
         
-        <li id="section-28">
+        <li id="section-29">
             <div class="annotation">
               <div class="pilwrap">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <h3 id="module">Module</h3>
 <p>A module is a file.</p>
