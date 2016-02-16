@@ -185,7 +185,7 @@ local path resolution.
       pkg.name ?= "ROOT"
       pkg.scopedName ?= "ROOT"
 
-      (path) ->
+      fn = (path) ->
         if typeof path is "object"
           loadPackage(path)
         else if isPackage(path)
@@ -199,6 +199,11 @@ local path resolution.
         else
           loadPath(module, pkg, path)
 
+      fn.packageWrapper = publicAPI.packageWrapper
+      fn.executePackageWrapper = publicAPI.executePackageWrapper
+
+      return fn
+
 Because we can't actually `require('require')` we need to export it a little
 differently.
 
@@ -211,11 +216,10 @@ This can be used for generating standalone HTML pages, scripts, and tests.
       packageWrapper: (pkg, code) ->
         """
           ;(function(PACKAGE) {
-            var oldRequire = self.Require;
-            #{PACKAGE.distribution.main.content}
+            var src = #{JSON.stringify(PACKAGE.distribution.main.content)};
+            var Require = new Function("PACKAGE", "return " + src)({distribution: {main: {content: src}}});
             var require = Require.generateFor(PACKAGE);
             #{code};
-            self.Require = oldRequire;
           })(#{JSON.stringify(pkg, null, 2)});
         """
 
@@ -226,7 +230,7 @@ Wrap a package as a string that will execute its entry point.
 
 Require a package directly.
 
-      require: loadPackage
+      loadPackage: loadPackage
 
     if exports?
       module.exports = publicAPI
@@ -272,6 +276,10 @@ Annotate a program with a source url so we can debug in Chrome's dev tools.
         #{program}
         //# sourceURL=#{pkg.scopedName}/#{path}
       """
+
+Return value for inserting into function for embedded windows.
+
+    return publicAPI
 
 Definitions
 -----------
