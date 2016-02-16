@@ -62,6 +62,9 @@ describe "require", ->
 
     assert.equal "TEST", result
 
+  it "should be able to require something packaged with browserify", ->
+    assert.equal latestRequire("/samples/browserified"), "coolio"
+
 describe "package wrapper", ->
   it "should be able to generate a package wrapper", ->
     pkgString = latestRequire.packageWrapper(PACKAGE, "window.r = Require;")
