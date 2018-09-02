@@ -1,11 +1,11 @@
 (function(pkg) {
   (function() {
-  var annotateSourceURL, cacheFor, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule, startsWith,
+  var annotateSourceURL, cacheFor, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, publicAPI, rootModule, startsWith,
     __slice = [].slice;
 
   fileSeparator = '/';
 
-  global = window;
+  global = self;
 
   defaultEntryPoint = "main";
 
@@ -70,11 +70,14 @@
   };
 
   loadModule = function(pkg, path) {
-    var args, context, dirname, file, module, program, values;
+    var args, content, context, dirname, file, module, program, values;
     if (!(file = pkg.distribution[path])) {
       throw "Could not find file at " + path + " in " + pkg.name;
     }
-    program = annotateSourceURL(file.content, pkg, path);
+    if ((content = file.content) == null) {
+      throw "Malformed package. No content for file at " + path + " in " + pkg.name;
+    }
+    program = annotateSourceURL(content, pkg, path);
     dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
     module = {
       path: dirname,
@@ -106,6 +109,7 @@
   };
 
   generateRequireFn = function(pkg, module) {
+    var fn;
     if (module == null) {
       module = rootModule;
     }
@@ -115,9 +119,11 @@
     if (pkg.scopedName == null) {
       pkg.scopedName = "ROOT";
     }
-    return function(path) {
+    fn = function(path) {
       var otherPackage;
-      if (isPackage(path)) {
+      if (typeof path === "object") {
+        return loadPackage(path);
+      } else if (isPackage(path)) {
         if (!(otherPackage = pkg.dependencies[path])) {
           throw "Package: " + path + " not found.";
         }
@@ -132,14 +138,26 @@
         return loadPath(module, pkg, path);
       }
     };
+    fn.packageWrapper = publicAPI.packageWrapper;
+    fn.executePackageWrapper = publicAPI.executePackageWrapper;
+    return fn;
+  };
+
+  publicAPI = {
+    generateFor: generateRequireFn,
+    packageWrapper: function(pkg, code) {
+      return ";(function(PACKAGE) {\n  var src = " + (JSON.stringify(PACKAGE.distribution.main.content)) + ";\n  var Require = new Function(\"PACKAGE\", \"return \" + src)({distribution: {main: {content: src}}});\n  var require = Require.generateFor(PACKAGE);\n  " + code + ";\n})(" + (JSON.stringify(pkg, null, 2)) + ");";
+    },
+    executePackageWrapper: function(pkg) {
+      return publicAPI.packageWrapper(pkg, "require('./" + pkg.entryPoint + "')");
+    },
+    loadPackage: loadPackage
   };
 
   if (typeof exports !== "undefined" && exports !== null) {
-    exports.generateFor = generateRequireFn;
+    module.exports = publicAPI;
   } else {
-    global.Require = {
-      generateFor: generateRequireFn
-    };
+    global.Require = publicAPI;
   }
 
   startsWith = function(string, prefix) {
@@ -160,9 +178,10 @@
     return "" + program + "\n//# sourceURL=" + pkg.scopedName + "/" + path;
   };
 
+  return publicAPI;
+
 }).call(this);
 
-//# sourceURL=main.coffee
   window.require = Require.generateFor(pkg);
 })({
   "source": {
@@ -222,7 +241,7 @@
     },
     "test/require.coffee": {
       "path": "test/require.coffee",
-      "content": "\n# Load our latest require code for testing\n# NOTE: This causes the root for relative requires to be at the root dir, not the test dir\nlatestRequire = require('/main').generateFor(PACKAGE)\n\ndescribe \"PACKAGE\", ->\n  it \"should be named 'ROOT'\", ->\n    assert.equal PACKAGE.name, \"ROOT\"\n\ndescribe \"require\", ->\n  it \"should not exist globally\", ->\n    assert !global.require\n\n  it \"should be able to require a file that exists with a relative path\", ->\n    assert latestRequire('/samples/terminal')\n\n  it \"should get whatever the file exports\", ->\n    assert latestRequire('/samples/terminal').something\n\n  it \"should not get something the file doesn't export\", ->\n    assert !latestRequire('/samples/terminal').something2\n\n  it \"should throw a descriptive error when requring circular dependencies\", ->\n    assert.throws ->\n      latestRequire('/samples/circular')\n    , /circular/i\n\n  it \"should throw a descriptive error when requiring a package that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"does_not_exist\"\n    , /not found/i\n\n  it \"should throw a descriptive error when requiring a relative path that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"/does_not_exist\"\n    , /Could not find file/i\n\n  it \"should recover gracefully enough from requiring files that throw errors\", ->\n    assert.throws ->\n      latestRequire \"/samples/throws\"\n\n    assert.throws ->\n      latestRequire \"/samples/throws\"\n    , (err) ->\n      !/circular/i.test err\n\n  it \"should cache modules\", ->\n    result = latestRequire(\"/samples/random\")\n\n    assert.equal latestRequire(\"/samples/random\"), result\n\n  it \"should be able to require a JSON package object\", ->\n    SAMPLE_PACKAGE =\n      entryPoint: \"main\"\n      distribution:\n        main:\n          content: \"module.exports = require('./other')\"\n        other:\n          content: \"module.exports = 'TEST'\"\n\n    result = latestRequire SAMPLE_PACKAGE\n\n    assert.equal \"TEST\", result\n\n  it \"should be able to require something packaged with browserify\", ->\n    assert.equal latestRequire(\"/samples/browserified\"), \"coolio\"\n\ndescribe \"package wrapper\", ->\n  it \"should be able to generate a package wrapper\", ->\n    pkgString = latestRequire.packageWrapper(PACKAGE, \"window.r = Require;\")\n    assert pkgString\n\n  it \"should be able to execute code in the package context\", ->\n    code = latestRequire.packageWrapper(PACKAGE, \"window.test = require.packageWrapper(PACKAGE, 'alert(\\\"heyy\\\")');\")\n    Function(code)()\n    assert window.test\n    delete window.test\n\ndescribe \"public API\", ->\n  it \"should be able to require a JSON package directly\", ->\n    assert require('/main').loadPackage(PACKAGE).loadPackage\n\ndescribe \"module context\", ->\n  it \"should know __dirname\", ->\n    assert.equal \"test\", __dirname\n\n  it \"should know __filename\", ->\n    assert __filename\n\n  it \"should know its package\", ->\n    assert PACKAGE\n\ndescribe \"malformed package\", ->\n  malformedPackage =\n    distribution:\n      yolo: \"No content!\"\n\n  it \"should throw an error when attempting to require a malformed file in a package distribution\", ->\n    r = require('/main').generateFor(malformedPackage)\n\n    assert.throws ->\n      r.require \"yolo\"\n    , (err) ->\n      !/malformed/i.test err\n\ndescribe \"dependent packages\", ->\n  PACKAGE.dependencies[\"test-package\"] =\n    distribution:\n      main:\n        content: \"module.exports = PACKAGE.name\"\n\n  PACKAGE.dependencies[\"strange/name\"] =\n    distribution:\n      main:\n        content: \"\"\n\n  it \"should raise an error when requiring a package that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"nonexistent\"\n    , (err) ->\n      /nonexistent/i.test err\n\n  it \"should be able to require a package that exists\", ->\n    assert latestRequire(\"test-package\")\n\n  it \"Dependent packages should know their names when required\", ->\n    assert.equal latestRequire(\"test-package\"), \"test-package\"\n\n  it \"should be able to require by pretty much any name\", ->\n    assert latestRequire(\"strange/name\")\n",
+      "content": "\n# Load our latest require code for testing\n# NOTE: This causes the root for relative requires to be at the root dir, not the test dir\nlatestRequire = require('/main').generateFor(PACKAGE)\n\nconsole.log PACKAGE\n\ndescribe \"PACKAGE\", ->\n  it \"should be named 'ROOT'\", ->\n    assert.equal PACKAGE.name, \"ROOT\"\n\ndescribe \"require\", ->\n  it \"should not exist globally\", ->\n    assert !global.require\n\n  it \"should be able to require a file that exists with a relative path\", ->\n    assert latestRequire('/samples/terminal')\n\n  it \"should get whatever the file exports\", ->\n    assert latestRequire('/samples/terminal').something\n\n  it \"should not get something the file doesn't export\", ->\n    assert !latestRequire('/samples/terminal').something2\n\n  it \"should throw a descriptive error when requring circular dependencies\", ->\n    assert.throws ->\n      latestRequire('/samples/circular')\n    , /circular/i\n\n  it \"should throw a descriptive error when requiring a package that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"does_not_exist\"\n    , /not found/i\n\n  it \"should throw a descriptive error when requiring a relative path that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"/does_not_exist\"\n    , /Could not find file/i\n\n  it \"should recover gracefully enough from requiring files that throw errors\", ->\n    assert.throws ->\n      latestRequire \"/samples/throws\"\n\n    assert.throws ->\n      latestRequire \"/samples/throws\"\n    , (err) ->\n      !/circular/i.test err\n\n  it \"should cache modules\", ->\n    result = latestRequire(\"/samples/random\")\n\n    assert.equal latestRequire(\"/samples/random\"), result\n\n  it \"should be able to require a JSON package object\", ->\n    SAMPLE_PACKAGE =\n      entryPoint: \"main\"\n      distribution:\n        main:\n          content: \"module.exports = require('./other')\"\n        other:\n          content: \"module.exports = 'TEST'\"\n\n    result = latestRequire SAMPLE_PACKAGE\n\n    assert.equal \"TEST\", result\n\n  it \"should be able to require something packaged with browserify\", ->\n    assert.equal latestRequire(\"/samples/browserified\"), \"coolio\"\n\ndescribe \"package wrapper\", ->\n  it \"should be able to generate a package wrapper\", ->\n    pkgString = latestRequire.packageWrapper(PACKAGE, \"window.r = Require;\")\n    assert pkgString\n\n  it \"should be able to execute code in the package context\", ->\n    code = latestRequire.packageWrapper(PACKAGE, \"window.test = require.packageWrapper(PACKAGE, 'alert(\\\"heyy\\\")');\")\n    Function(code)()\n    assert window.test\n    delete window.test\n\ndescribe \"public API\", ->\n  it \"should be able to require a JSON package directly\", ->\n    assert require('/main').loadPackage(PACKAGE).loadPackage\n\ndescribe \"module context\", ->\n  it \"should know __dirname\", ->\n    assert.equal \"test\", __dirname\n\n  it \"should know __filename\", ->\n    assert __filename\n\n  it \"should know its package\", ->\n    assert PACKAGE\n\ndescribe \"malformed package\", ->\n  malformedPackage =\n    distribution:\n      yolo: \"No content!\"\n\n  it \"should throw an error when attempting to require a malformed file in a package distribution\", ->\n    r = require('/main').generateFor(malformedPackage)\n\n    assert.throws ->\n      r.require \"yolo\"\n    , (err) ->\n      !/malformed/i.test err\n\ndescribe \"dependent packages\", ->\n  it \"should allow for arbitrary characters\", ->\n    r = require('/main').generateFor\n      dependencies:\n        \"#$!jadelet\":\n          entryPoint: \"main\"\n          distribution:\n            main: \n              content: \"module.exports = 'ok';\"\n\n    assert.equal r(\"#$!jadelet\"), \"ok\"\n  \n  PACKAGE.dependencies[\"test-package\"] =\n    distribution:\n      main:\n        content: \"module.exports = PACKAGE.name\"\n\n  PACKAGE.dependencies[\"strange/name\"] =\n    distribution:\n      main:\n        content: \"\"\n\n  it \"should raise an error when requiring a package that doesn't exist\", ->\n    assert.throws ->\n      latestRequire \"nonexistent\"\n    , (err) ->\n      /nonexistent/i.test err\n\n  it \"should be able to require a package that exists\", ->\n    assert latestRequire(\"test-package\")\n\n  it \"Dependent packages should know their names when required\", ->\n    assert.equal latestRequire(\"test-package\"), \"test-package\"\n\n  it \"should be able to require by pretty much any name\", ->\n    assert latestRequire(\"strange/name\")\n",
       "mode": "100644",
       "type": "blob"
     }
@@ -265,12 +284,15 @@
     },
     "test/require": {
       "path": "test/require",
-      "content": "(function() {\n  var latestRequire;\n\n  latestRequire = require('/main').generateFor(PACKAGE);\n\n  describe(\"PACKAGE\", function() {\n    return it(\"should be named 'ROOT'\", function() {\n      return assert.equal(PACKAGE.name, \"ROOT\");\n    });\n  });\n\n  describe(\"require\", function() {\n    it(\"should not exist globally\", function() {\n      return assert(!global.require);\n    });\n    it(\"should be able to require a file that exists with a relative path\", function() {\n      return assert(latestRequire('/samples/terminal'));\n    });\n    it(\"should get whatever the file exports\", function() {\n      return assert(latestRequire('/samples/terminal').something);\n    });\n    it(\"should not get something the file doesn't export\", function() {\n      return assert(!latestRequire('/samples/terminal').something2);\n    });\n    it(\"should throw a descriptive error when requring circular dependencies\", function() {\n      return assert.throws(function() {\n        return latestRequire('/samples/circular');\n      }, /circular/i);\n    });\n    it(\"should throw a descriptive error when requiring a package that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"does_not_exist\");\n      }, /not found/i);\n    });\n    it(\"should throw a descriptive error when requiring a relative path that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"/does_not_exist\");\n      }, /Could not find file/i);\n    });\n    it(\"should recover gracefully enough from requiring files that throw errors\", function() {\n      assert.throws(function() {\n        return latestRequire(\"/samples/throws\");\n      });\n      return assert.throws(function() {\n        return latestRequire(\"/samples/throws\");\n      }, function(err) {\n        return !/circular/i.test(err);\n      });\n    });\n    it(\"should cache modules\", function() {\n      var result;\n      result = latestRequire(\"/samples/random\");\n      return assert.equal(latestRequire(\"/samples/random\"), result);\n    });\n    it(\"should be able to require a JSON package object\", function() {\n      var SAMPLE_PACKAGE, result;\n      SAMPLE_PACKAGE = {\n        entryPoint: \"main\",\n        distribution: {\n          main: {\n            content: \"module.exports = require('./other')\"\n          },\n          other: {\n            content: \"module.exports = 'TEST'\"\n          }\n        }\n      };\n      result = latestRequire(SAMPLE_PACKAGE);\n      return assert.equal(\"TEST\", result);\n    });\n    return it(\"should be able to require something packaged with browserify\", function() {\n      return assert.equal(latestRequire(\"/samples/browserified\"), \"coolio\");\n    });\n  });\n\n  describe(\"package wrapper\", function() {\n    it(\"should be able to generate a package wrapper\", function() {\n      var pkgString;\n      pkgString = latestRequire.packageWrapper(PACKAGE, \"window.r = Require;\");\n      return assert(pkgString);\n    });\n    return it(\"should be able to execute code in the package context\", function() {\n      var code;\n      code = latestRequire.packageWrapper(PACKAGE, \"window.test = require.packageWrapper(PACKAGE, 'alert(\\\"heyy\\\")');\");\n      Function(code)();\n      assert(window.test);\n      return delete window.test;\n    });\n  });\n\n  describe(\"public API\", function() {\n    return it(\"should be able to require a JSON package directly\", function() {\n      return assert(require('/main').loadPackage(PACKAGE).loadPackage);\n    });\n  });\n\n  describe(\"module context\", function() {\n    it(\"should know __dirname\", function() {\n      return assert.equal(\"test\", __dirname);\n    });\n    it(\"should know __filename\", function() {\n      return assert(__filename);\n    });\n    return it(\"should know its package\", function() {\n      return assert(PACKAGE);\n    });\n  });\n\n  describe(\"malformed package\", function() {\n    var malformedPackage;\n    malformedPackage = {\n      distribution: {\n        yolo: \"No content!\"\n      }\n    };\n    return it(\"should throw an error when attempting to require a malformed file in a package distribution\", function() {\n      var r;\n      r = require('/main').generateFor(malformedPackage);\n      return assert.throws(function() {\n        return r.require(\"yolo\");\n      }, function(err) {\n        return !/malformed/i.test(err);\n      });\n    });\n  });\n\n  describe(\"dependent packages\", function() {\n    PACKAGE.dependencies[\"test-package\"] = {\n      distribution: {\n        main: {\n          content: \"module.exports = PACKAGE.name\"\n        }\n      }\n    };\n    PACKAGE.dependencies[\"strange/name\"] = {\n      distribution: {\n        main: {\n          content: \"\"\n        }\n      }\n    };\n    it(\"should raise an error when requiring a package that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"nonexistent\");\n      }, function(err) {\n        return /nonexistent/i.test(err);\n      });\n    });\n    it(\"should be able to require a package that exists\", function() {\n      return assert(latestRequire(\"test-package\"));\n    });\n    it(\"Dependent packages should know their names when required\", function() {\n      return assert.equal(latestRequire(\"test-package\"), \"test-package\");\n    });\n    return it(\"should be able to require by pretty much any name\", function() {\n      return assert(latestRequire(\"strange/name\"));\n    });\n  });\n\n}).call(this);\n",
+      "content": "(function() {\n  var latestRequire;\n\n  latestRequire = require('/main').generateFor(PACKAGE);\n\n  console.log(PACKAGE);\n\n  describe(\"PACKAGE\", function() {\n    return it(\"should be named 'ROOT'\", function() {\n      return assert.equal(PACKAGE.name, \"ROOT\");\n    });\n  });\n\n  describe(\"require\", function() {\n    it(\"should not exist globally\", function() {\n      return assert(!global.require);\n    });\n    it(\"should be able to require a file that exists with a relative path\", function() {\n      return assert(latestRequire('/samples/terminal'));\n    });\n    it(\"should get whatever the file exports\", function() {\n      return assert(latestRequire('/samples/terminal').something);\n    });\n    it(\"should not get something the file doesn't export\", function() {\n      return assert(!latestRequire('/samples/terminal').something2);\n    });\n    it(\"should throw a descriptive error when requring circular dependencies\", function() {\n      return assert.throws(function() {\n        return latestRequire('/samples/circular');\n      }, /circular/i);\n    });\n    it(\"should throw a descriptive error when requiring a package that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"does_not_exist\");\n      }, /not found/i);\n    });\n    it(\"should throw a descriptive error when requiring a relative path that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"/does_not_exist\");\n      }, /Could not find file/i);\n    });\n    it(\"should recover gracefully enough from requiring files that throw errors\", function() {\n      assert.throws(function() {\n        return latestRequire(\"/samples/throws\");\n      });\n      return assert.throws(function() {\n        return latestRequire(\"/samples/throws\");\n      }, function(err) {\n        return !/circular/i.test(err);\n      });\n    });\n    it(\"should cache modules\", function() {\n      var result;\n      result = latestRequire(\"/samples/random\");\n      return assert.equal(latestRequire(\"/samples/random\"), result);\n    });\n    it(\"should be able to require a JSON package object\", function() {\n      var SAMPLE_PACKAGE, result;\n      SAMPLE_PACKAGE = {\n        entryPoint: \"main\",\n        distribution: {\n          main: {\n            content: \"module.exports = require('./other')\"\n          },\n          other: {\n            content: \"module.exports = 'TEST'\"\n          }\n        }\n      };\n      result = latestRequire(SAMPLE_PACKAGE);\n      return assert.equal(\"TEST\", result);\n    });\n    return it(\"should be able to require something packaged with browserify\", function() {\n      return assert.equal(latestRequire(\"/samples/browserified\"), \"coolio\");\n    });\n  });\n\n  describe(\"package wrapper\", function() {\n    it(\"should be able to generate a package wrapper\", function() {\n      var pkgString;\n      pkgString = latestRequire.packageWrapper(PACKAGE, \"window.r = Require;\");\n      return assert(pkgString);\n    });\n    return it(\"should be able to execute code in the package context\", function() {\n      var code;\n      code = latestRequire.packageWrapper(PACKAGE, \"window.test = require.packageWrapper(PACKAGE, 'alert(\\\"heyy\\\")');\");\n      Function(code)();\n      assert(window.test);\n      return delete window.test;\n    });\n  });\n\n  describe(\"public API\", function() {\n    return it(\"should be able to require a JSON package directly\", function() {\n      return assert(require('/main').loadPackage(PACKAGE).loadPackage);\n    });\n  });\n\n  describe(\"module context\", function() {\n    it(\"should know __dirname\", function() {\n      return assert.equal(\"test\", __dirname);\n    });\n    it(\"should know __filename\", function() {\n      return assert(__filename);\n    });\n    return it(\"should know its package\", function() {\n      return assert(PACKAGE);\n    });\n  });\n\n  describe(\"malformed package\", function() {\n    var malformedPackage;\n    malformedPackage = {\n      distribution: {\n        yolo: \"No content!\"\n      }\n    };\n    return it(\"should throw an error when attempting to require a malformed file in a package distribution\", function() {\n      var r;\n      r = require('/main').generateFor(malformedPackage);\n      return assert.throws(function() {\n        return r.require(\"yolo\");\n      }, function(err) {\n        return !/malformed/i.test(err);\n      });\n    });\n  });\n\n  describe(\"dependent packages\", function() {\n    it(\"should allow for arbitrary characters\", function() {\n      var r;\n      r = require('/main').generateFor({\n        dependencies: {\n          \"#$!jadelet\": {\n            entryPoint: \"main\",\n            distribution: {\n              main: {\n                content: \"module.exports = 'ok';\"\n              }\n            }\n          }\n        }\n      });\n      return assert.equal(r(\"#$!jadelet\"), \"ok\");\n    });\n    PACKAGE.dependencies[\"test-package\"] = {\n      distribution: {\n        main: {\n          content: \"module.exports = PACKAGE.name\"\n        }\n      }\n    };\n    PACKAGE.dependencies[\"strange/name\"] = {\n      distribution: {\n        main: {\n          content: \"\"\n        }\n      }\n    };\n    it(\"should raise an error when requiring a package that doesn't exist\", function() {\n      return assert.throws(function() {\n        return latestRequire(\"nonexistent\");\n      }, function(err) {\n        return /nonexistent/i.test(err);\n      });\n    });\n    it(\"should be able to require a package that exists\", function() {\n      return assert(latestRequire(\"test-package\"));\n    });\n    it(\"Dependent packages should know their names when required\", function() {\n      return assert.equal(latestRequire(\"test-package\"), \"test-package\");\n    });\n    return it(\"should be able to require by pretty much any name\", function() {\n      return assert(latestRequire(\"strange/name\"));\n    });\n  });\n\n}).call(this);\n",
       "type": "blob"
     }
   },
   "progenitor": {
     "url": "https://danielx.net/editor/"
+  },
+  "config": {
+    "version": "0.5.2"
   },
   "version": "0.5.2",
   "entryPoint": "main",
