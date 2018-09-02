@@ -3,6 +3,8 @@
 # NOTE: This causes the root for relative requires to be at the root dir, not the test dir
 latestRequire = require('/main').generateFor(PACKAGE)
 
+console.log PACKAGE
+
 describe "PACKAGE", ->
   it "should be named 'ROOT'", ->
     assert.equal PACKAGE.name, "ROOT"
@@ -104,6 +106,17 @@ describe "malformed package", ->
       !/malformed/i.test err
 
 describe "dependent packages", ->
+  it "should allow for arbitrary characters", ->
+    r = require('/main').generateFor
+      dependencies:
+        "#$!jadelet":
+          entryPoint: "main"
+          distribution:
+            main: 
+              content: "module.exports = 'ok';"
+
+    assert.equal r("#$!jadelet"), "ok"
+  
   PACKAGE.dependencies["test-package"] =
     distribution:
       main:
